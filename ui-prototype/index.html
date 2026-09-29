@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title data-i18n="app.title">Local Host · PS5 局域网服务</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="contact-strip"><span data-i18n="contact.label">联系我们</span><span data-i18n="contact.qq">QQ群：672608984</span><button type="button" class="link-button" data-copy="qq-number" data-i18n="common.copy">复制</button><span id="qq-number" class="visually-hidden">672608984</span><button id="discord-link" type="button" class="link-button" data-i18n="contact.discord">Discord 技术交流</button></div>
+    <header class="app-header">
+      <a class="brand" href="#top" aria-label="Local Host 首页" data-i18n-aria-label="brand.home">
+        <img class="brand-icon" src="../assets/app-icon.png" alt="" aria-hidden="true">
+        <span class="brand-copy"><strong>PS5 Local Host</strong><small data-i18n="brand.subtitle">PS5 局域网服务</small></span>
+      </a>
+      <div class="header-controls">
+        <div class="language-control"><label for="language" data-i18n="language.label">语言</label><select id="language" aria-label="语言" data-i18n-aria-label="language.label"><option value="system" data-i18n="language.system">跟随系统</option><option value="zh-CN" data-i18n="language.zhCN">简体中文</option><option value="en" data-i18n="language.en">English</option></select></div>
+      </div>
+    </header>
+
+    <main id="top">
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">LOCAL CONSOLE</p>
+          <h1 data-i18n="heading.title">让 PS5 访问电脑上的页面</h1>
+          <p class="lede" data-i18n="heading.lede">下载用户提供的网页文件，启动本地 DNS 与 Web 服务。</p>
+        </div>
+        <div id="overall-status" class="overall-status" role="status" aria-live="polite">
+          <i></i><span data-i18n="status.reading">正在读取状态</span>
+        </div>
+      </div>
+
+      <section class="target-bar card" aria-label="设备设置" data-i18n-aria-label="target.title">
+        <div class="field"><label for="interface" data-i18n="connection.interface">电脑网络接口</label><select id="interface" disabled><option value="" data-i18n="connection.loadingInterfaces">正在读取网络接口…</option></select></div>
+        <div class="target-computer"><span data-i18n="target.computerIp">本机 IP</span> <strong id="computer-ip">—</strong></div>
+        <div class="field"><label for="ps5-ip" data-i18n="target.ps5Ip">PS5 IP</label><input id="ps5-ip" type="text" inputmode="decimal" autocomplete="off" placeholder="192.168.100.2"></div>
+        <button id="save-ps5-target" class="secondary-button" type="button" data-i18n="target.save">保存 PS5 地址</button>
+        <details class="target-ports"><summary data-i18n="target.ports">端口设置</summary><div class="target-port-fields"><div class="field"><label for="elf-port" data-i18n="target.elfPort">ELF 接收端口</label><input id="elf-port" type="number" min="1" max="65535" value="9021"></div><div class="field"><label for="manager-port" data-i18n="target.managerPort">PKG Manager 端口</label><input id="manager-port" type="number" min="1" max="65535" value="8844"></div></div></details>
+        <p id="target-message" class="target-message" data-i18n="target.help">电脑和 PS5 需要处于同一局域网。保存地址不会检测设备。</p>
+      </section>
+
+      <section class="workbench-section local-section" aria-labelledby="local-title"><div class="workbench-heading"><div><h2 id="local-title" data-i18n="workbench.localTitle">在 PS5 打开本地网页</h2><p data-i18n="workbench.localIntro">准备网页资源，启动本地 DNS/HTTPS 服务，再从 PS5 用户指南访问。</p></div><button id="guide-toggle" class="secondary-button" type="button" data-i18n="guide.button">PS5 网络设置指引</button></div>
+      <details id="guide-panel" class="guide-panel"><summary data-i18n="guide.title">连接步骤</summary><ol><li data-i18n="guide.step1">在电脑上下载网页资源并启动本地服务。</li><li data-i18n="guide.step2">在 PS5 网络设置中将主 DNS 设为上方电脑 IP。</li><li data-i18n="guide.step3">从 PS5 用户指南打开页面；证书提示需由用户自行确认。</li></ol><p data-i18n="guide.elf">在部分固件上，WebKit Autoloader 默认只接受 PS5 本机 ELF 连接。电脑发送插件前，请通过 Payload Manager 启用网络版 ELF Loader。</p></details>
+
+      <section class="card source-card" aria-labelledby="source-title">
+        <div class="section-head">
+          <div><h2 id="source-title" data-i18n="source.title">文件来源</h2><p data-i18n="source.description">提供 GitHub 仓库或 ZIP 地址，选择网页入口文件。</p></div>
+        </div>
+        <div class="download-route-control">
+          <button id="download-route" class="route-switch" type="button" role="switch" aria-checked="false" aria-describedby="download-route-help" disabled><span class="switch-track" aria-hidden="true"></span><span data-i18n="downloadRoute.label">GitHub 镜像加速</span></button>
+          <span id="download-route-status" class="route-status" role="status" aria-live="polite"></span>
+          <p id="download-route-help" data-i18n="downloadRoute.help">适用于网页和插件下载。使用第三方 gh-proxy.org，仅处理公开 GitHub 资源；切换不影响进行中的任务。</p>
+          <p id="download-route-error" class="field-message error" role="alert" hidden></p>
+        </div>
+        <div class="source-fields">
+          <div class="field source-url-field">
+            <label for="source-url" data-i18n="source.urlLabel">GitHub 仓库或 ZIP 下载地址</label>
+            <input id="source-url" type="url" autocomplete="url" spellcheck="false" placeholder="https://github.com/owner/repository">
+          </div>
+          <div class="field path-field">
+            <label for="entry-path" data-i18n="source.entryLabel">网页入口文件</label>
+            <input id="entry-path" type="text" value="index.html" spellcheck="false" placeholder="index.html">
+          </div>
+        </div>
+        <div class="source-actions">
+          <p class="field-message" id="source-message" role="status" aria-live="polite" data-i18n="source.waiting">等待下载。请填写文件来源。</p>
+          <button id="download-source" class="secondary-button" type="button" disabled data-i18n="source.download">下载并检查</button>
+        </div>
+        <div id="download-progress" class="progress-wrap" hidden>
+          <div class="progress-label"><span id="download-phase" data-i18n="source.downloading">正在下载</span><span id="download-percent"></span></div>
+          <progress id="download-meter" max="100" value="0" aria-label="下载进度" data-i18n-aria-label="source.progressLabel"></progress>
+          <div class="progress-tools"><p id="download-meta" class="progress-meta"></p><button id="cancel-download" class="cancel-download" type="button" hidden data-i18n="source.cancel">取消下载</button></div>
+        </div>
+      </section>
+
+      <div class="content-grid">
+        <section class="card connection-card" aria-labelledby="connection-title">
+          <div class="section-head">
+            <div><h2 id="connection-title" data-i18n="connection.title">PS5 连接信息</h2><p data-i18n="connection.description">PS5 与电脑需要接入同一个局域网。</p></div>
+          </div>
+          <div class="address-row">
+            <div><span class="value-label" data-i18n="connection.dnsAddress">PS5 主 DNS 地址</span><strong id="dns-address" class="address-value">—</strong></div>
+            <button class="copy-button" type="button" data-copy="dns-address" disabled data-i18n="common.copy">复制</button>
+          </div>
+          <div class="address-row">
+            <div><span class="value-label" data-i18n="connection.httpsAddress">PS5 网页地址 · HTTPS</span><strong class="url-value" id="https-address">—</strong></div>
+            <button class="copy-button" type="button" data-copy="https-address" disabled data-i18n="common.copy">复制</button>
+          </div>
+          <div class="address-row secondary-address-row">
+            <div><span class="value-label" data-i18n="connection.httpAddress">本地测试地址 · HTTP</span><strong class="url-value" id="http-address">—</strong></div>
+            <button class="copy-button" type="button" data-copy="http-address" disabled data-i18n="common.copy">复制</button>
+          </div>
+          <details class="advanced-settings">
+            <summary><span data-i18n="advanced.title">高级设置</span> <span data-i18n="advanced.optional">可选</span></summary>
+            <div class="field">
+              <label for="target-domain" data-i18n="advanced.domain">DNS 目标域名</label>
+              <input id="target-domain" type="text" spellcheck="false" placeholder="留空使用默认设置" data-i18n-placeholder="advanced.domainPlaceholder">
+              <p class="help-text" data-i18n="advanced.domainHelp">只在需要将特定域名指向本机时填写。</p>
+            </div>
+          </details>
+        </section>
+
+        <section class="card service-card" aria-labelledby="service-title">
+          <div class="section-head">
+            <div><h2 id="service-title" data-i18n="service.title">服务状态</h2><p data-i18n="service.description">服务运行状态与 PS5 实际访问结果分开显示。</p></div>
+          </div>
+          <div class="service-list">
+            <div class="service-row"><span class="service-name"><i id="dns-dot" class="service-dot"></i><span data-i18n="service.dns">DNS 服务</span> <small id="dns-port">端口 53</small></span><strong id="dns-status" data-i18n="status.reading">读取中</strong></div>
+            <div class="service-row"><span class="service-name"><i id="https-dot" class="service-dot"></i><span data-i18n="service.https">HTTPS 服务</span> <small id="https-port">端口 443</small></span><strong id="https-status" data-i18n="status.reading">读取中</strong></div>
+            <div class="service-row"><span class="service-name"><i id="http-dot" class="service-dot"></i><span data-i18n="service.http">HTTP 测试服务</span> <small id="http-port">端口 8000</small></span><strong id="http-status" data-i18n="status.reading">读取中</strong></div>
+            <div class="service-row access-row"><span class="service-name"><i id="access-dot" class="service-dot access-dot"></i><span data-i18n="service.ps5Access">PS5 HTTPS 访问</span> <small data-i18n="service.actualRequest">实际请求</small></span><strong id="access-status" class="access-status" data-i18n="service.accessPending">尚未确认</strong></div>
+          </div>
+          <div id="service-error" class="error-box" role="alert" hidden></div>
+          <details id="service-error-details" class="error-details" hidden><summary data-i18n="error.technicalDetails">技术详情</summary><pre id="service-error-raw"></pre></details>
+          <button id="service-toggle" class="primary-button" type="button" disabled data-i18n="status.reading">正在读取状态</button>
+          <p id="service-caption" class="service-caption" data-i18n="service.captionReading">正在读取本机服务状态。</p>
+        </section>
+      </div>
+      <aside class="ad-slot" aria-label="推广内容" data-i18n-aria-label="ads.title"><strong data-i18n="ads.title">推广内容</strong><span data-i18n="ads.pending">广告位预留 · 审核中</span><small data-i18n="ads.note">广告不影响本地服务功能</small></aside>
+
+      <div class="notice local-notice" role="note"><strong data-i18n="notice.title">PS5 13.60 尚未实机验证</strong><span data-i18n="notice.body">首次访问 HTTPS 页面时，PS5 可能显示自签名证书警告。</span></div>
+      </section>
+
+      <section class="workbench-section" aria-labelledby="components-title"><div class="workbench-heading"><div><h2 id="components-title" data-i18n="components.title">安装插件</h2><p data-i18n="components.intro">从上游项目下载并发送 ELF。发送结果与主机安装结果分开显示。</p></div><p class="hint" data-i18n="components.hint">PKG Manager 先查运行状态；发送 ELF 时使用 9021</p></div>
+        <div class="component-list">
+          <article class="component-card" data-component="autoloader"><div class="component-info"><h3>WebKit Autoloader</h3><p data-i18n="components.autoloaderDescription">在 PS5 上创建 WebKit Autoloader 入口。</p><button class="link-button component-source" type="button" data-i18n="components.source">查看上游项目</button></div><div class="component-version">v0.5.0</div><div class="component-state"><span class="component-status" data-i18n="components.notDownloaded">未下载</span><progress max="100" value="0"></progress></div><div class="component-actions"><button type="button" class="secondary-button component-download" data-i18n="components.download">下载</button><button type="button" class="primary-button component-load" data-i18n="components.load">加载到 PS5</button></div></article>
+          <article class="component-card" data-component="pkgManager"><div class="component-info"><h3>PKG Manager</h3><p data-i18n="components.managerDescription">在 PS5 上管理和安装 PKG 文件。</p><button class="link-button component-source" type="button" data-i18n="components.source">查看上游项目</button></div><div class="component-version">v1.4.1</div><div class="component-state"><span class="component-status" data-i18n="components.notDownloaded">未下载</span><progress max="100" value="0"></progress></div><div class="component-actions"><button type="button" class="secondary-button component-download" data-i18n="components.download">下载</button><button type="button" class="primary-button component-load" data-i18n="components.load">加载到 PS5</button></div><div class="component-notice" role="status" aria-live="polite" hidden><span class="component-notice-text"></span><button class="secondary-button component-reload" type="button" data-i18n="components.reload">重新加载到 PS5</button></div></article>
+        </div>
+      </section>
+
+      <section class="workbench-section" aria-labelledby="pkg-title"><div class="workbench-heading"><div><h2 id="pkg-title" data-i18n="pkg.title">安装本地 PKG</h2><p data-i18n="pkg.intro">选择电脑上的 PKG 文件，通过 PS5 上的 PKG Manager 安装。</p></div></div>
+        <div id="pkg-drop" class="pkg-picker"><div><strong id="pkg-name" data-i18n="pkg.none">未选择文件</strong><small id="pkg-details" data-i18n="pkg.dropHelp">可以将 PKG 文件拖放到这里</small></div><button id="pkg-select" class="secondary-button" type="button" data-i18n="pkg.select">选择文件</button><div class="pkg-target"><span data-i18n="pkg.target">目标 PS5</span><strong id="pkg-target-ip">—</strong></div><button id="pkg-install" class="primary-button" type="button" data-i18n="pkg.install">安装到 PS5</button></div>
+        <p class="hint" data-i18n="pkg.hint">点击安装时检测 PKG Manager（8844）</p><div class="pkg-progress"><div><span data-i18n="pkg.transfer">文件传输进度</span><progress id="pkg-transfer" max="100" value="0"></progress><span id="pkg-transfer-label">0%</span></div><div><span data-i18n="pkg.installProgress">PS5 安装进度</span><progress id="pkg-install-progress" max="100" value="0"></progress><span id="pkg-install-label">—</span></div></div>
+      </section>
+
+      <section class="workbench-section activity-section" aria-labelledby="activity-title"><div class="workbench-heading"><div><h2 id="activity-title" data-i18n="logs.title">运行信息</h2><p data-i18n="logs.intro">本地服务和远端任务的运行记录</p></div><span id="log-count">0</span></div><div id="remote-status" class="remote-status" role="status" aria-live="polite"></div><details id="remote-details" class="error-details" hidden><summary data-i18n="error.technicalDetails">技术详情</summary><pre id="remote-error-raw"></pre></details><button id="remote-cancel" type="button" class="cancel-download" hidden data-i18n="remote.cancel">取消当前任务</button><div id="log-list" class="log-list" aria-live="polite"><p class="empty-log" data-i18n="logs.empty">暂无运行信息。</p></div></section>
+    </main>
+    <footer class="app-footer" data-i18n="footer.text">Local Host · 服务仅供本地网络测试</footer>
+  </div>
+  <script src="../src/i18n/index.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
