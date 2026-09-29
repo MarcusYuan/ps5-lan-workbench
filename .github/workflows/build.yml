@@ -161,7 +161,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
+          notes=".github/releases/$GITHUB_REF_NAME.md"
+          test -s "$notes"
           gh release create "$GITHUB_REF_NAME" release/assets/* \
             --verify-tag \
             --title "PS5 Local Host $GITHUB_REF_NAME" \
-            --notes "Unsigned builds for Windows x64, macOS Intel and macOS Apple Silicon. PS5 firmware 13.60 behavior still needs hardware verification. See the README for usage and limitations."
+            --notes-file "$notes"
+      - name: Verify published downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download "$GITHUB_REF_NAME" --dir release/downloaded
+          test "$(find release/downloaded -maxdepth 1 -type f | wc -l)" -eq 7
+          cmp release/assets/SHA256SUMS.txt release/downloaded/SHA256SUMS.txt
+          (cd release/downloaded && sha256sum -c SHA256SUMS.txt)

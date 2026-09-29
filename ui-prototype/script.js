@@ -431,6 +431,16 @@
       const loadButton = card.querySelector('.component-load');
       loadButton.disabled = Boolean(active) || targetEdited || entry.phase !== 'ready' || !target.address;
       loadButton.textContent = t('components.load');
+      const runtime = card.querySelector('.component-runtime');
+      if (runtime) {
+        const status = state.componentRuntime?.[id] || {};
+        const current = status.target === target.address && !targetEdited ? status : { phase: 'unchecked' };
+        runtime.textContent = current.phase === 'error' ?
+          t('components.runtimeError', { detail: asText(current.error) }) :
+          t(`components.runtime${(current.phase || 'unchecked')[0].toUpperCase()}${(current.phase || 'unchecked').slice(1)}`);
+        card.querySelector('.component-check').disabled = !target.address || targetEdited || Boolean(active) || Boolean(remoteAction);
+        card.querySelector('.component-open').disabled = !target.address || targetEdited || Boolean(active) || Boolean(remoteAction);
+      }
       const notice = card.querySelector('.component-notice');
       if (notice) {
         const sameTarget = task?.target?.address === target.address &&
@@ -559,6 +569,10 @@
     card.querySelector('.component-reload')?.addEventListener('click', () =>
       runRemoteAction(`reload:${id}`, () => api.loadComponent(id,
         { reload: true, expectedTaskId: currentState?.remoteTask?.id })));
+    card.querySelector('.component-check')?.addEventListener('click', () =>
+      runRemoteAction(`check:${id}`, () => api.checkComponent(id)));
+    card.querySelector('.component-open')?.addEventListener('click', () =>
+      runRemoteAction(`open:${id}`, () => api.openComponentUi(id)));
   }
   elements.pkgSelect.addEventListener('click', () => runRemoteAction('select', () => api.selectPkg()));
   elements.pkgInstall.addEventListener('click', () => runRemoteAction('install', () => api.installPkg(currentState?.pkgSelection?.fileId)));

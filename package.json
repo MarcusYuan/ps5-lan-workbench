@@ -1,6 +1,6 @@
 {
   "name": "ps5-local-host",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Local DNS and HTTPS host for user supplied web files",
   "main": "src/main.js",
@@ -38,11 +38,17 @@
     },
     "mac": {
       "category": "public.app-category.utilities",
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "win": {
       "icon": "assets/app-icon.ico",
-      "target": ["nsis", "portable"]
+      "target": [
+        "nsis",
+        "portable"
+      ]
     }
   }
 }

@@ -17,6 +17,10 @@ async function inspect(cacheDir, id) {
   const file = cachePath(cacheDir, id);
   const stat = await fsp.stat(file).catch(() => null);
   if (!stat?.isFile() || stat.size !== item.size) return null;
+  const header = Buffer.alloc(4);
+  const check = await fsp.open(file, 'r');
+  try { await check.read(header, 0, 4, 0); } finally { await check.close(); }
+  if (!header.equals(Buffer.from([0x7f, 0x45, 0x4c, 0x46]))) return null;
   const hash = crypto.createHash('sha256');
   for await (const chunk of fs.createReadStream(file)) hash.update(chunk);
   return hash.digest('hex') === item.sha256 ? { file, sha256: item.sha256, size: stat.size, version: item.version } : null;

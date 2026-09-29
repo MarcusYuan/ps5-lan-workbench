@@ -208,6 +208,7 @@ main { width: min(1280px, 100%); padding: 18px 20px 30px; }
 .component-version { color: #4a69a0; font-size: 11px; }
 .component-state { color: #4a69a0; font-size: 11px; }
 .component-state progress { margin: 5px 0 0; }
+.component-runtime { display: block; margin-top: 5px; }
 .component-actions { display: flex; flex-wrap: wrap; gap: 7px; }
 .component-actions .primary-button { width: auto; min-height: 32px; margin: 0; }
 .component-actions .secondary-button { min-height: 32px; }

@@ -12,6 +12,7 @@ const { CATALOG, component } = require('./components/catalog');
 const componentFiles = require('./components/downloader');
 const { sendElf } = require('./ps5/elf-client');
 const manager = require('./ps5/manager-client');
+const payloadManager = require('./ps5/payload-manager-client');
 const pkgFiles = require('./pkg/file');
 const pkgInstall = require('./pkg/install-session');
 const { downloadArchive, validateEntryPath, METADATA_FILENAME } = require('./core/downloader');
@@ -38,6 +39,7 @@ if (helperIndex >= 0) {
   let selectedPkg = null;
   let remoteAbort = null;
   let remotePromise = null;
+  let componentCheckBusy = false;
   let allowClose = false;
   const componentAborts = new Map();
   let configData = null;
@@ -49,6 +51,7 @@ if (helperIndex >= 0) {
     ps5Target: { ...DEFAULT_TARGET }, downloadRoute: 'direct',
     components: Object.fromEntries(Object.keys(CATALOG).map(id => [id, { phase: 'waiting', progress: null, meta: null, error: null }])),
     pkgSelection: null, remoteTask: null,
+    componentRuntime: { payloadManager: { phase: 'unchecked', target: '', error: null } },
   };
   let configWrite = Promise.resolve();
 
@@ -258,13 +261,17 @@ if (helperIndex >= 0) {
     return publicState();
   }
   async function setPs5Target(_event, value) {
-    if (remoteAbort) throw error('REMOTE_BUSY', 'remote.busy');
+    if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
     const target = normalizeTarget(value);
-    try { await commitConfig({ ps5Target: target }); }
-    catch (cause) { throw i18n.createError('CONFIG_SAVE_FAILED', 'error.configSave', {}, cause.message); }
-    state.ps5Target = target;
-    emit();
-    return publicState();
+    componentCheckBusy = true;
+    try {
+      try { await commitConfig({ ps5Target: target }); }
+      catch (cause) { throw i18n.createError('CONFIG_SAVE_FAILED', 'error.configSave', {}, cause.message); }
+      state.ps5Target = target;
+      state.componentRuntime.payloadManager = { phase: 'unchecked', target: '', error: null };
+      emit();
+      return publicState();
+    } finally { componentCheckBusy = false; }
   }
   function publicCatalog() {
     return Object.fromEntries(Object.keys(CATALOG).map(id => {
@@ -301,8 +308,53 @@ if (helperIndex >= 0) {
       throw cause;
     } finally { componentAborts.delete(id); }
   }
+  async function sendComponentElf(file, target, options) {
+    try { await sendElf(file, target, options); }
+    catch (cause) {
+      if (payloadManager.isUnreachable(cause)) cause.i18nKey = 'remote.elfUnavailable';
+      throw cause;
+    }
+  }
+  function setPayloadManagerRuntime(phase, target, cause = null) {
+    if (state.ps5Target.address !== target.address) return;
+    state.componentRuntime.payloadManager = {
+      phase, target: target.address, error: cause ? i18n.serializeError(cause) : null,
+    };
+    emit();
+  }
+  async function checkComponent(_event, id) {
+    if (id !== 'payloadManager') throw error('UNSUPPORTED_COMPONENT_CHECK', 'remote.checkUnsupported');
+    if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
+    const target = normalizeTarget(state.ps5Target);
+    componentCheckBusy = true;
+    try {
+      await payloadManager.identify(target);
+      setPayloadManagerRuntime('running', target);
+    } catch (cause) {
+      setPayloadManagerRuntime(payloadManager.isUnreachable(cause) ? 'unreachable' : 'error', target, cause);
+      if (!payloadManager.isUnreachable(cause)) throw cause;
+    } finally { componentCheckBusy = false; }
+    return publicState();
+  }
+  async function openComponentUi(_event, id) {
+    if (id !== 'payloadManager') throw error('UNSUPPORTED_COMPONENT_CHECK', 'remote.checkUnsupported');
+    if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
+    const target = normalizeTarget(state.ps5Target);
+    componentCheckBusy = true;
+    try {
+      try {
+        await payloadManager.identify(target);
+        setPayloadManagerRuntime('running', target);
+      } catch (cause) {
+        setPayloadManagerRuntime(payloadManager.isUnreachable(cause) ? 'unreachable' : 'error', target, cause);
+        throw cause;
+      }
+      await shell.openExternal(payloadManager.url(target, '/'));
+    } finally { componentCheckBusy = false; }
+    return publicState();
+  }
   function startRemote(type, label, operation) {
-    if (remoteAbort) throw error('REMOTE_BUSY', 'remote.busy');
+    if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
     const target = normalizeTarget(state.ps5Target);
     const id = crypto.randomUUID();
     const abort = new AbortController();
@@ -330,7 +382,7 @@ if (helperIndex >= 0) {
     return remotePromise;
   }
   async function loadComponent(_event, id, options = {}) {
-    component(id);
+    const item = component(id);
     const reload = options?.reload === true;
     if (reload && (id !== 'pkgManager' || state.remoteTask?.id !== options.expectedTaskId ||
       state.remoteTask?.phase !== 'alreadyRunning' || remoteAbort))
@@ -338,7 +390,13 @@ if (helperIndex >= 0) {
     const inspected = await componentFiles.inspect(componentDir, id);
     if (!inspected) throw error('COMPONENT_NOT_DOWNLOADED', 'remote.downloadFirst');
     return startRemote('component', id, async (target, signal, update) => {
-      if (id === 'pkgManager') {
+      if (item.verification === 'payloadManager') return payloadManager.load(inspected.file, target, {
+        signal, sendImpl: sendComponentElf,
+        onProgress: progress => update({ transferProgress: progress }),
+        onPhase: phase => update({ phase, ...(phase === 'sending' ? { transferProgress: 0 } : {}) }),
+        onRuntime: (phase, cause) => setPayloadManagerRuntime(phase, target, cause),
+      });
+      if (item.verification === 'pkgManager') {
         try {
           const existing = await manager.identify(target, signal);
           if (existing.version === '1.4.1') {
@@ -350,9 +408,9 @@ if (helperIndex >= 0) {
         }
       }
       update({ phase: 'sending', transferProgress: 0 });
-      await sendElf(inspected.file, target, { signal,
+      await sendComponentElf(inspected.file, target, { signal,
         onProgress: progress => update({ transferProgress: progress }) });
-      if (id === 'autoloader') return { status: 'sent' };
+      if (item.verification === 'sent') return { status: 'sent' };
       update({ phase: 'verifying' });
       for (let attempt = 0; attempt < 15; attempt++) {
         if (signal.aborted) throw Object.assign(new Error('Canceled'), { code: 'RESULT_UNCONFIRMED' });
@@ -401,6 +459,8 @@ if (helperIndex >= 0) {
     ipcMain.handle('components:download', handle(downloadComponent));
     ipcMain.handle('components:cancelDownload', handle((_event, id) => { component(id); componentAborts.get(id)?.abort(); return publicState(); }));
     ipcMain.handle('components:load', handle(loadComponent));
+    ipcMain.handle('components:check', handle(checkComponent));
+    ipcMain.handle('components:openUi', handle(openComponentUi));
     ipcMain.handle('pkg:selectFile', handle(pickPkg));
     ipcMain.handle('pkg:registerDrop', handle((_event, filePath) => registerPkg(filePath)));
     ipcMain.handle('pkg:install', handle(installPkg));
