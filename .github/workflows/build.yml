@@ -3,6 +3,7 @@ name: Build desktop packages
 on:
   push:
     branches: [main]
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -93,3 +94,74 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check tag matches package version
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "$GITHUB_REF_NAME" = "v$version"
+      - name: Download Windows packages
+        uses: actions/download-artifact@v8
+        with:
+          name: ps5-lan-workbench-windows-x64
+          path: release/windows-x64
+      - name: Download macOS Intel packages
+        uses: actions/download-artifact@v8
+        with:
+          name: ps5-lan-workbench-macos-x64-unsigned
+          path: release/macos-x64
+      - name: Download macOS Apple Silicon packages
+        uses: actions/download-artifact@v8
+        with:
+          name: ps5-lan-workbench-macos-arm64-unsigned
+          path: release/macos-arm64
+      - name: Verify and prepare Release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd release/windows-x64 && tr -d '\r' < SHA256SUMS.txt | sha256sum -c -)
+          for platform in macos-x64 macos-arm64; do
+            (cd "release/$platform" && sha256sum -c SHA256SUMS.txt)
+          done
+          mkdir -p release/assets
+          version="${GITHUB_REF_NAME#v}"
+          setup=(release/windows-x64/*Setup*.exe)
+          executables=(release/windows-x64/*.exe)
+          [[ ${#setup[@]} -eq 1 && -f "${setup[0]}" && ${#executables[@]} -eq 2 ]]
+          for file in "${executables[@]}"; do
+            if [[ "$file" != "${setup[0]}" ]]; then
+              cp "$file" "release/assets/PS5-Local-Host-$version-windows-x64-portable.exe"
+            fi
+          done
+          cp "${setup[0]}" "release/assets/PS5-Local-Host-$version-windows-x64-setup.exe"
+          for arch in x64 arm64; do
+            dmgs=(release/macos-$arch/*.dmg)
+            zips=(release/macos-$arch/*.zip)
+            [[ ${#dmgs[@]} -eq 1 && -f "${dmgs[0]}" ]]
+            [[ ${#zips[@]} -eq 1 && -f "${zips[0]}" ]]
+            cp "${dmgs[0]}" "release/assets/PS5-Local-Host-$version-macos-$arch.dmg"
+            cp "${zips[0]}" "release/assets/PS5-Local-Host-$version-macos-$arch.zip"
+          done
+          (cd release/assets && sha256sum *.exe *.dmg *.zip > SHA256SUMS.txt)
+          test "$(find release/assets -maxdepth 1 -type f | wc -l)" -eq 7
+      - name: Publish Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release create "$GITHUB_REF_NAME" release/assets/* \
+            --verify-tag \
+            --title "PS5 Local Host $GITHUB_REF_NAME" \
+            --notes "Unsigned builds for Windows x64, macOS Intel and macOS Apple Silicon. PS5 firmware 13.60 behavior still needs hardware verification. See the README for usage and limitations."
