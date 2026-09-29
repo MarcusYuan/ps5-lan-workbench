@@ -49,7 +49,7 @@ npm run pack:win
 
 `pack:mac` 在 macOS 上生成 DMG 和 ZIP；`pack:win` 生成 NSIS 和 portable 包。正式分发所需的 macOS 签名、公证和 Windows 签名需要发布者自己的凭据。本项目不包含这些凭据。
 
-推送到 GitHub `main` 分支或手动运行 [Build desktop packages](https://github.com/MarcusYuan/ps5-lan-workbench/actions/workflows/build.yml)，会分别构建 Windows x64 安装版、便携版和 macOS DMG、ZIP；下载文件在该次 Actions 运行的 Artifacts 中。自动构建不签名、不发布 GitHub Release。macOS 未签名包可能被 Gatekeeper 拦截，正式分发前仍需签名、公证及实机验证。
+正式安装包请从 [Releases](https://github.com/MarcusYuan/ps5-lan-workbench/releases) 下载：Windows x64 提供安装版和便携版，macOS Intel（x64）与 Apple Silicon（arm64）各提供 DMG、ZIP，并附 SHA-256 校验清单。推送与 `package.json` 版本一致的 `v*` 标签会自动构建并发布 Release；推送到 `main` 或手动运行 [Build desktop packages](https://github.com/MarcusYuan/ps5-lan-workbench/actions/workflows/build.yml) 只生成 Actions Artifacts。构建包未签名，macOS 可能被 Gatekeeper 拦截，正式分发前仍需签名、公证及实机验证。
 
 ## 使用
 
