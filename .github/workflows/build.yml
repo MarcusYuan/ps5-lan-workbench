@@ -27,19 +27,37 @@ jobs:
         run: npm test
       - name: Build installer and portable executable
         run: npm run pack:win
+      - name: Verify packages and write checksums
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem -Path dist -Filter '*.exe' -File)
+          if ($files.Count -ne 2) { throw "Expected an installer and a portable executable; found $($files.Count)." }
+          $files | ForEach-Object {
+            '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $_.Name
+          } | Set-Content -Path dist/SHA256SUMS.txt -Encoding ascii
       - name: Upload Windows packages
         uses: actions/upload-artifact@v7
         with:
           name: ps5-lan-workbench-windows-x64
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
 
   macos:
-    name: macOS
-    runs-on: macos-latest
+    name: macOS ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: macos-15-intel
+          - arch: arm64
+            runner: macos-15
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
@@ -55,14 +73,23 @@ jobs:
       - name: Test
         run: npm test
       - name: Build DMG and ZIP
-        run: npm run pack:mac
+        run: npm run pack:mac -- --${{ matrix.arch }}
+      - name: Verify packages and write checksums
+        shell: bash
+        run: |
+          dmgs=(dist/*.dmg)
+          zips=(dist/*.zip)
+          [[ ${#dmgs[@]} -eq 1 && -f ${dmgs[0]} ]]
+          [[ ${#zips[@]} -eq 1 && -f ${zips[0]} ]]
+          (cd dist && shasum -a 256 *.dmg *.zip > SHA256SUMS.txt)
       - name: Upload macOS packages
         uses: actions/upload-artifact@v7
         with:
-          name: ps5-lan-workbench-macos-unsigned
+          name: ps5-lan-workbench-macos-${{ matrix.arch }}-unsigned
           path: |
             dist/*.dmg
             dist/*.zip
+            dist/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
           compression-level: 0

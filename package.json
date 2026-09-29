@@ -6,7 +6,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node --test test/*.test.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
     "pack:mac": "electron-builder --mac dmg zip --publish=never",
     "pack:mac:zip": "electron-builder --mac zip",
     "pack:win": "electron-builder --win nsis portable --x64 --publish=never",
