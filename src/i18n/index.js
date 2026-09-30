@@ -395,6 +395,20 @@
   });
 
   Object.assign(en, {
+    'game.title': 'Send game folder / image',
+    'game.intro': 'Upload through FTP to /data/homebrew/ on PS5, preserving the file structure.',
+    'game.folder': 'Choose game folder', 'game.image': 'Choose exFAT / FFPKG image',
+    'game.port': 'FTP port', 'game.send': 'Send to PS5', 'game.none': 'No game folder or image selected',
+    'game.selection': '{name} · {count} files · {size} MiB',
+    'game.help': 'Start FTP Server on PS5 first. Existing destinations are not overwritten. Set up a compatible loader separately; transfer completion does not confirm the game runs. Hardware testing on 13.00 is pending.',
+    'game.uploading': 'Transferring game files… {progress}%',
+    'remote.transferred': 'Transfer complete. Confirm loader recognition and game startup on PS5.',
+    'game.invalid': 'Choose a complete game root folder, or an .exfat / .ffpkg image. Links and unsafe names are not supported.',
+    'game.changed': 'The selected game files changed. Select them again.',
+    'game.exists': 'A destination with this name already exists. No existing game was overwritten.',
+    'game.size': 'The uploaded file size does not match. Transfer was not published.',
+    'game.ftpError': 'FTP transfer failed. Check the PS5 FTP service, port and available storage.',
+    'game.cleanup': 'An empty staging directory may remain at {path}.',
     'downloadRoute.label': 'GitHub mirror acceleration',
     'downloadRoute.direct': 'Off · Direct to GitHub',
     'downloadRoute.mirror': 'On · gh-proxy.org',
@@ -404,6 +418,20 @@
     'downloadRoute.invalid': 'Choose direct or mirror downloads.',
   });
   Object.assign(zhCN, {
+    'game.title': '发送游戏目录 / 镜像',
+    'game.intro': '通过 FTP 发送到 PS5 的 /data/homebrew/，保留文件结构。',
+    'game.folder': '选择游戏目录', 'game.image': '选择 exFAT / FFPKG 镜像',
+    'game.port': 'FTP 端口', 'game.send': '发送到 PS5', 'game.none': '未选择游戏目录或镜像',
+    'game.selection': '{name} · {count} 个文件 · {size} MiB',
+    'game.help': '先在 PS5 上启动 FTP Server。现有同名目标不会覆盖；加载器需另行准备，传输完成不代表游戏可运行。13.00 实机待验证。',
+    'game.uploading': '正在传输游戏文件… {progress}%',
+    'remote.transferred': '传输完成，请在 PS5 上确认加载器识别及游戏启动。',
+    'game.invalid': '请选择完整游戏根目录或 .exfat / .ffpkg 镜像，不支持链接和不安全文件名。',
+    'game.changed': '所选游戏文件已变化，请重新选择。',
+    'game.exists': '主机已有同名目标，本次未覆盖已有游戏。',
+    'game.size': '上传后的文件大小不符，本次未移入游戏目录。',
+    'game.ftpError': 'FTP 传输失败，请检查 PS5 FTP 服务、端口及剩余空间。',
+    'game.cleanup': '可能残留空的临时目录：{path}。',
     'downloadRoute.label': 'GitHub 镜像加速',
     'downloadRoute.direct': '已关闭 · 直连 GitHub',
     'downloadRoute.mirror': '已开启 · gh-proxy.org',
@@ -458,6 +486,8 @@
       PAYLOAD_MANAGER_HTTP: 'remote.payloadManagerResponse',
       INSTALL_FAILED: 'error.installFailed', RESULT_UNCONFIRMED: 'error.resultUnconfirmed',
       UPLOAD_STALLED: 'error.uploadStalled', TASK_CANCELED: 'remote.canceled',
+      GAME_INVALID: 'game.invalid', GAME_CHANGED: 'game.changed', GAME_EXISTS: 'game.exists', GAME_SIZE: 'game.size',
+      FTP_REPLY: 'game.ftpError', FTP_CLOSED: 'game.ftpError', FTP_TIMEOUT: 'game.ftpError', FTP_PROTOCOL: 'game.ftpError',
     };
     return {
       code: error?.code || 'UNKNOWN_ERROR',

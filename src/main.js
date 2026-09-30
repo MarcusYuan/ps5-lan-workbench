@@ -15,6 +15,7 @@ const manager = require('./ps5/manager-client');
 const payloadManager = require('./ps5/payload-manager-client');
 const pkgFiles = require('./pkg/file');
 const pkgInstall = require('./pkg/install-session');
+const games = require('./ps5/game-transfer');
 const { downloadArchive, validateEntryPath, METADATA_FILENAME } = require('./core/downloader');
 const { getCertificate, validDomain } = require('./core/certificate');
 const { createController } = require('./service/controller');
@@ -37,6 +38,7 @@ if (helperIndex >= 0) {
   let certDir;
   let componentDir;
   let selectedPkg = null;
+  let selectedGame = null;
   let remoteAbort = null;
   let remotePromise = null;
   let componentCheckBusy = false;
@@ -50,7 +52,7 @@ if (helperIndex >= 0) {
     ports, diagnostic, language: 'system', locale: 'en', urls: { https: '', http: '' }, logs: [],
     ps5Target: { ...DEFAULT_TARGET }, downloadRoute: 'direct',
     components: Object.fromEntries(Object.keys(CATALOG).map(id => [id, { phase: 'waiting', progress: null, meta: null, error: null }])),
-    pkgSelection: null, remoteTask: null,
+    pkgSelection: null, gameSelection: null, remoteTask: null,
     componentRuntime: { payloadManager: { phase: 'unchecked', target: '', error: null } },
   };
   let configWrite = Promise.resolve();
@@ -369,7 +371,7 @@ if (helperIndex >= 0) {
     };
     remotePromise = Promise.resolve().then(() => operation(target, abort.signal, update)).then(result => {
       const phase = ['alreadyRunning', 'alreadyRunningBusy'].includes(result?.status) ? result.status :
-        result?.status === 'confirmed' ? 'confirmed' : 'sent';
+        result?.status === 'transferred' ? 'transferred' : result?.status === 'confirmed' ? 'confirmed' : 'sent';
       update({ phase, transferProgress: phase === 'alreadyRunning' || phase === 'alreadyRunningBusy' ? null : 100,
         installProgress: phase === 'confirmed' && type === 'pkg' ? 100 : null });
       return publicState();
@@ -443,6 +445,27 @@ if (helperIndex >= 0) {
     return startRemote('pkg', selected.name, (target, signal, update) =>
       pkgInstall.install(selected, target, { signal, onUpdate: update }));
   }
+  async function pickGame(_event, kind) {
+    if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
+    if (!['folder', 'image'].includes(kind)) throw error('GAME_INVALID', 'game.invalid');
+    componentCheckBusy = true;
+    try {
+      const result = await dialog.showOpenDialog(window, kind === 'folder' ?
+        { properties: ['openDirectory'] } :
+        { properties: ['openFile'], filters: [{ name: 'exFAT / FFPKG', extensions: ['exfat', 'ffpkg'] }] });
+      if (result.canceled || result.filePaths.length !== 1) return publicState();
+      selectedGame = await games.selectGame(result.filePaths[0], kind);
+      state.gameSelection = games.publicGame(selectedGame);
+      emit();
+      return publicState();
+    } finally { componentCheckBusy = false; }
+  }
+  async function transferGame(_event, fileId, port) {
+    if (!selectedGame || selectedGame.fileId !== fileId) throw error('GAME_INVALID', 'game.invalid');
+    const selected = selectedGame;
+    return startRemote('game', selected.name, (target, signal, update) =>
+      games.transfer(selected, target, { signal, onUpdate: update, port }));
+  }
   app.whenReady().then(async () => {
     await loadState();
     ipcMain.handle('host:getState', () => publicState());
@@ -464,6 +487,8 @@ if (helperIndex >= 0) {
     ipcMain.handle('pkg:selectFile', handle(pickPkg));
     ipcMain.handle('pkg:registerDrop', handle((_event, filePath) => registerPkg(filePath)));
     ipcMain.handle('pkg:install', handle(installPkg));
+    ipcMain.handle('game:select', handle(pickGame));
+    ipcMain.handle('game:transfer', handle(transferGame));
     ipcMain.handle('tasks:cancel', handle((_event, id) => {
       if (!remoteAbort || state.remoteTask?.id !== id) throw error('TASK_NOT_ACTIVE', 'remote.taskNotActive');
       remoteAbort.abort(); return publicState();

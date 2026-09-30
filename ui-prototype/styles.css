@@ -261,3 +261,7 @@ main { width: min(1280px, 100%); padding: 18px 20px 30px; }
 .route-status { font-size: 12px; color: #475569; overflow-wrap: anywhere; }
 .download-route-control p { flex-basis: 100%; margin: 0; font-size: 12px; line-height: 1.6; color: #64748b; }
 .download-route-control p.error { color: #b42318; }
+.game-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.game-controls label { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.game-controls input { width: 90px; padding: 7px; }
+.game-controls .primary-button { width: auto; margin: 0; min-height: 34px; }

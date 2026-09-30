@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-PS5 Local Host is a desktop tool for local network testing. It runs DNS and web services on your computer so a PS5 can attempt to open web files you provide. It also offers user initiated downloads of third party components, ELF delivery, and local PKG installation through PKG Manager.
+PS5 Local Host is a desktop tool for local network testing. It runs DNS and web services on your computer so a PS5 can attempt to open web files you provide. It also offers user initiated downloads of third party components, ELF delivery, local PKG installation through PKG Manager, and FTP transfer of game folders or images.
 
 > **Technical exchange and scope of use:** This project provides local network services and file transfer tools for technical discussion and authorized testing. Its repository and builds do not bundle PS5 exploits, jailbreak scripts, third party ELF files, or game content; third party components are downloaded only after a user action. Read the [disclaimer](#disclaimer) below. “Technical exchange” does not itself grant permission to access or modify a device or run third party content.
 
@@ -16,6 +16,7 @@ PS5 Local Host is a desktop tool for local network testing. It runs DNS and web 
 | DNS redirection | Answer A queries for a configured domain with the selected computer IPv4 address; other domains are not forwarded. |
 | Component actions | Download fixed upstream WebKit Autoloader, PKG Manager, Kstuff FPKG, Payload Manager, FTP Server (drakmor), and PS5 Web File Manager release assets on request, check their pinned SHA-256 hashes, and send ELF files on request. |
 | Local PKG installation | Select one `.pkg` on your computer and transfer it through PKG Manager Direct Install on the PS5. |
+| Game folder / image transfer | Upload a complete game folder or an `.exfat` / `.ffpkg` image through FTP to `/data/homebrew/` on PS5. Completion does not confirm mounting or game startup. |
 | Status and logs | Track services, PS5 HTTPS requests, downloads, and remote tasks separately. |
 
 Components, web files, and PKGs are selected or obtained by the user and are not bundled with the app. Archive checks cover the URL, structure, and entry file, among other basic conditions; they are not a security audit of web scripts.
@@ -60,6 +61,15 @@ After sending FTP Server, confirm startup on the console and connect an FTP clie
 
 Kstuff now uses the user supplied [GBAtemp test5 attachment](https://gbatemp.net/attachments/kstuff-1-13-fpkg-dr-test5-elf-7z.593030/), extracted after download. Both the archive and ELF have pinned sizes and SHA-256 hashes computed from the downloaded files; these have not been compared with author published hashes. FPKG compatibility on firmware 13.40/13.60 is unverified. Download again to replace the old Lite 1.11 cache; the component ID stays compatible. GBAtemp downloads directly without the GitHub mirror.
 
+### FTP transfer of game folders and images
+
+1. Save the PS5 target address and start FTP Server on the console. Sending its ELF does not confirm FTP is running.
+2. Under “Send game folder / image”, choose a complete game root folder or an existing `.exfat` / `.ffpkg` image. Folders must contain a nonempty `eboot.bin` and a `sce_sys/param.json` with a `titleId`. Symbolic links, directory junctions and unsafe filenames are rejected. Image selection checks the extension and basic file conditions, not internal game contents or compatibility. `.ffpkg` is an image, distinct from an FPKG installation package.
+3. Check the FTP port (default 2121) and click “Send to PS5”. This feature uses anonymous FTP login without storing credentials, and requires a console service that permits that login method.
+4. Files are staged under `/data/.ps5-local-host-<task-id>/`. After checking each remote file size, the app renames the completed folder or image into `/data/homebrew/<selected-name>`. Existing destinations are rejected; do not modify the destination with other tools during transfer. Size checking is not a content hash check. Source file changes stop the task.
+5. Progress and cancellation appear in the task area. After failure or cancellation, the app attempts to remove only this task's temporary files; technical details record the staging path when cleanup fails. A lost connection during the final rename produces an unconfirmed result that needs checking on PS5. Resume, overwrite updates, storage destination selection and image creation are not available yet.
+6. Confirm recognition, mounting and startup through a compatible console loader such as ShadowMountPlus. Prepare that loader separately; this app does not automatically download, start or verify it. Firmware 13.00 and individual game compatibility still require hardware testing.
+
 ### GitHub mirror
 
 “GitHub mirror acceleration” under “File source” is off by default. When enabled, new downloads of public GitHub repository API responses, ZIPs, and component assets go through the third party `gh-proxy.org` service. Changing the setting does not interrupt a current task or change DNS, HTTPS, or PS5 connections. The mirror provider receives the requested public resource URL. The app does not route account credentials, URLs with query parameters, or ZIPs from other sites through the mirror. Component SHA-256 checks still apply. Ordinary web ZIPs have no pinned trusted hash, so assess the source and mirror yourself. If the mirror fails, turn it off and retry.
@@ -71,7 +81,7 @@ Kstuff now uses the user supplied [GBAtemp test5 attachment](https://gbatemp.net
 | DNS | Only A queries for the target domain (default `manuals.playstation.net`) receive the selected computer IPv4 address. AAAA has no address; other domains return NXDOMAIN. Public DNS requests are not forwarded. |
 | Web | HTTPS and HTTP serve the same downloaded files. `/document/<language>/ps5/` redirects to the selected entry file; missing files return 404. |
 | Internet requests | The app contacts upstream sources only for user initiated downloads. User provided pages or scripts may make their own external requests. |
-| PS5 connections | The app contacts the saved PS5 address for ELF delivery or PKG installation only after the corresponding user action. |
+| PS5 connections | The app contacts the saved PS5 address when the user requests ELF delivery, PKG installation, game folder / image transfer, or a component status check. |
 | Local storage | Configuration, downloaded files, and certificate private keys live in Electron's user data directory, outside the package. Services must be started manually after relaunch. |
 
 To check whether a page works offline, disconnect the computer from the internet after downloading and starting the services, while keeping its local connection to the PS5.

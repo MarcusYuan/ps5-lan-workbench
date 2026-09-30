@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('localHost', Object.freeze({
   selectPkg: () => ipcRenderer.invoke('pkg:selectFile'),
   registerDroppedPkg: file => ipcRenderer.invoke('pkg:registerDrop', webUtils.getPathForFile(file)),
   installPkg: fileId => ipcRenderer.invoke('pkg:install', fileId),
+  selectGame: kind => ipcRenderer.invoke('game:select', kind),
+  transferGame: (fileId, port) => ipcRenderer.invoke('game:transfer', fileId, port),
   cancelTask: id => ipcRenderer.invoke('tasks:cancel', id),
   onEvent: callback => {
     if (typeof callback !== 'function') throw new TypeError('Expected a callback');

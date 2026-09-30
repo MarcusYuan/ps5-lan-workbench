@@ -139,6 +139,20 @@
         <p class="hint" data-i18n="pkg.hint">点击安装时检测 PKG Manager（8844）</p><div class="pkg-progress"><div><span data-i18n="pkg.transfer">文件传输进度</span><progress id="pkg-transfer" max="100" value="0"></progress><span id="pkg-transfer-label">0%</span></div><div><span data-i18n="pkg.installProgress">PS5 安装进度</span><progress id="pkg-install-progress" max="100" value="0"></progress><span id="pkg-install-label">—</span></div></div>
       </section>
 
+      <section class="workbench-section" aria-labelledby="game-title">
+        <div class="workbench-heading"><div><h2 id="game-title" data-i18n="game.title">发送游戏目录 / 镜像</h2><p data-i18n="game.intro">通过 FTP 发送到 PS5 的 /data/homebrew/，保留文件结构。</p></div></div>
+        <div class="game-controls">
+          <button id="game-folder" class="secondary-button" type="button" data-i18n="game.folder">选择游戏目录</button>
+          <button id="game-image" class="secondary-button" type="button" data-i18n="game.image">选择 exFAT / FFPKG 镜像</button>
+          <label><span data-i18n="game.port">FTP 端口</span><input id="game-port" type="number" min="1" max="65535" value="2121"></label>
+          <button id="game-send" class="primary-button" type="button" data-i18n="game.send">发送到 PS5</button>
+        </div>
+        <p id="game-selection" class="hint" data-i18n="game.none">未选择游戏目录或镜像</p>
+        <p class="hint" data-i18n="game.help">先在 PS5 上启动 FTP Server。现有同名目标不会覆盖；加载器需另行准备，传输完成不代表游戏可运行。13.00 实机待验证。</p>
+        <progress id="game-progress" max="100" value="0" data-i18n-aria-label="pkg.transfer"></progress>
+        <p id="game-result" class="remote-status" role="status" aria-live="polite"></p>
+      </section>
+
       <section class="workbench-section activity-section" aria-labelledby="activity-title"><div class="workbench-heading"><div><h2 id="activity-title" data-i18n="logs.title">运行信息</h2><p data-i18n="logs.intro">本地服务和远端任务的运行记录</p></div><span id="log-count">0</span></div><div id="remote-status" class="remote-status" role="status" aria-live="polite"></div><details id="remote-details" class="error-details" hidden><summary data-i18n="error.technicalDetails">技术详情</summary><pre id="remote-error-raw"></pre></details><button id="remote-cancel" type="button" class="cancel-download" hidden data-i18n="remote.cancel">取消当前任务</button><div id="log-list" class="log-list" aria-live="polite"><p class="empty-log" data-i18n="logs.empty">暂无运行信息。</p></div></section>
     </main>
     <footer class="app-footer" data-i18n="footer.text">Local Host · 服务仅供本地网络测试</footer>

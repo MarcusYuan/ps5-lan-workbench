@@ -405,18 +405,32 @@
       `${(state.pkgSelection.size / 1024 / 1024).toFixed(1)} MiB · ${state.pkgSelection.details?.title_name || ''}` : t('pkg.dropHelp');
     elements.pkgSelect.disabled = Boolean(active);
     elements.pkgInstall.disabled = Boolean(active) || targetEdited || !state.pkgSelection || !target.address;
-    const transfer = Number(task?.transferProgress);
-    const install = Number(task?.installProgress);
+    const game = state.gameSelection;
+    const gameBusy = Boolean(active) || Boolean(remoteAction);
+    $('#game-folder').disabled = gameBusy || !api?.selectGame;
+    $('#game-image').disabled = gameBusy || !api?.selectGame;
+    $('#game-port').disabled = gameBusy;
+    const ftpPort = Number($('#game-port').value);
+    $('#game-send').disabled = gameBusy || targetEdited || !game || !target.address ||
+      !Number.isInteger(ftpPort) || ftpPort < 1 || ftpPort > 65535;
+    $('#game-selection').textContent = game ?
+      t('game.selection', { name: game.name, count: game.fileCount, size: (game.size / 1024 / 1024).toFixed(1) }) : t('game.none');
+    $('#game-progress').value = task?.type === 'game' ? task.transferProgress || 0 : 0;
+    $('#game-result').textContent = task?.type === 'game' ?
+      `${t(task.phase === 'uploading' ? 'game.uploading' : `remote.${task.phase}`, { progress: Math.round(task.transferProgress || 0) })}${task.destination ? ` · ${task.destination}` : ''}${task.cleanupPath ? ` · ${t('game.cleanup', { path: task.cleanupPath })}` : ''}` : '';
+    const pkgTask = task?.type === 'pkg' ? task : null;
+    const transfer = Number(pkgTask?.transferProgress);
+    const install = Number(pkgTask?.installProgress);
     $('#pkg-transfer').value = Number.isFinite(transfer) ? Math.min(100, Math.max(0, transfer)) : 0;
-    $('#pkg-transfer-label').textContent = task?.transferProgress == null ? '—' : `${Math.round(transfer)}%`;
+    $('#pkg-transfer-label').textContent = pkgTask?.transferProgress == null ? '—' : `${Math.round(transfer)}%`;
     $('#pkg-install-progress').value = Number.isFinite(install) ? Math.min(100, Math.max(0, install)) : 0;
-    $('#pkg-install-label').textContent = task?.installProgress == null ? '—' : `${Math.round(install)}%`;
+    $('#pkg-install-label').textContent = pkgTask?.installProgress == null ? '—' : `${Math.round(install)}%`;
     elements.remoteCancel.hidden = !active;
     elements.remoteCancel.disabled = remoteAction === 'cancel';
     elements.remoteDetails.hidden = !task?.error?.detail;
     elements.remoteRaw.textContent = task?.error?.detail || '';
     elements.remoteStatus.textContent = task ?
-      `${task.label || ''} · ${task.target?.address || ''} · ${t(`remote.${task.phase}`, { progress: task.transferProgress ?? 0 })}${task.error ? ` · ${asText(task.error)}` : ''}` : '';
+      `${task.label || ''} · ${task.target?.address || ''} · ${t(task.type === 'game' && task.phase === 'uploading' ? 'game.uploading' : `remote.${task.phase}`, { progress: Math.round(task.transferProgress ?? 0) })}${task.error ? ` · ${asText(task.error)}` : ''}` : '';
     for (const card of document.querySelectorAll('[data-component]')) {
       const id = card.dataset.component;
       const entry = state.components?.[id] || {};
@@ -575,6 +589,11 @@
       runRemoteAction(`open:${id}`, () => api.openComponentUi(id)));
   }
   elements.pkgSelect.addEventListener('click', () => runRemoteAction('select', () => api.selectPkg()));
+  $('#game-folder').addEventListener('click', () => runRemoteAction('selectGame', () => api.selectGame('folder')));
+  $('#game-image').addEventListener('click', () => runRemoteAction('selectGame', () => api.selectGame('image')));
+  $('#game-port').addEventListener('input', render);
+  $('#game-send').addEventListener('click', () => runRemoteAction('transferGame', () =>
+    api.transferGame(currentState?.gameSelection?.fileId, Number($('#game-port').value))));
   elements.pkgInstall.addEventListener('click', () => runRemoteAction('install', () => api.installPkg(currentState?.pkgSelection?.fileId)));
   elements.pkgDrop.addEventListener('dragover', event => { event.preventDefault(); elements.pkgDrop.classList.add('drag-over'); });
   elements.pkgDrop.addEventListener('dragleave', () => elements.pkgDrop.classList.remove('drag-over'));
