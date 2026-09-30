@@ -5,6 +5,7 @@
   "description": "Local DNS and HTTPS host for user supplied web files",
   "main": "src/main.js",
   "scripts": {
+    "postinstall": "node scripts/prepare-7zip.js",
     "start": "electron .",
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "pack:mac": "electron-builder --mac dmg zip --publish=never",
