@@ -38,12 +38,7 @@ In the app, select the **Ethernet interface at `192.168.100.1`** and save **`192
 
 ## Seven steps from setup to playing
 
-<details>
-<summary>View the direct connection setup and seven-step diagram</summary>
-
 ![Direct computer-to-PS5 network setup and seven-step workflow](guides/assets/direct-connect-flow.en.png)
-
-</details>
 
 | Step | What to do | Why |
 | --- | --- | --- |

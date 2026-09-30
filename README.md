@@ -38,12 +38,7 @@ macOS 也提供 ZIP。**Source code 是源码，请选择上表中的应用包�
 
 ## 从准备到游玩的七个步骤
 
-<details>
-<summary>查看直连配置与七步流程图</summary>
-
 ![电脑直连 PS5 的网络配置与七步使用流程](guides/assets/direct-connect-flow.zh-CN.png)
-
-</details>
 
 | 步骤 | 怎么做 | 为什么 |
 | --- | --- | --- |
