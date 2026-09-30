@@ -6,6 +6,7 @@
 
 - 明确的用户指令优先；已经给出的任务授权持续有效，不重复索要确认。
 - 产品能力、使用方法和限制见 [中文 README](README.md) 与 [English README](README.en.md)，两者必须同步。
+- README 面向首次使用者，优先说明下载、准备和按目标操作；组件版本、协议、诊断和开发细节统一放在 [中文详细指南](guides/usage.zh-CN.md) 与 [English guide](guides/usage.en.md)，两者同步维护。
 - `package.json`、锁文件、工作流和代码提供当前实现证据。规则与实现冲突时，明确判断需要修复实现还是更新规则，不能把计划中的能力描述成已完成。
 - 新增长期规则前，先检查现有主题；同一主题只维护一份规则。临时调研、构建日志和任务计划不属于仓库规范。
 
@@ -23,6 +24,7 @@
 | 任务 | 入口 |
 |---|---|
 | 使用方法、功能范围、免责声明 | [README.md](README.md)、[README.en.md](README.en.md) |
+| 组件版本、网络参数、传输限制、诊断及源码运行 | [guides/usage.zh-CN.md](guides/usage.zh-CN.md)、[guides/usage.en.md](guides/usage.en.md) |
 | 版本、标签、打包、GitHub Releases、失败恢复 | [rules/github-release.md](rules/github-release.md) |
 | 依赖、开发命令、打包包含范围 | [package.json](package.json)、[package-lock.json](package-lock.json) |
 | GitHub 自动构建和发布的实际行为 | [.github/workflows/build.yml](.github/workflows/build.yml) |

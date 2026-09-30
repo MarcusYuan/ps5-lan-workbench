@@ -2,117 +2,75 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-PS5 Local Host is a desktop tool for local network testing. It runs DNS and web services on your computer so a PS5 can attempt to open web files you provide. It also offers user initiated downloads of third party components, ELF delivery, local PKG installation through PKG Manager, and FTP transfer of game folders or images.
+Connect your computer directly to your PS5 with an Ethernet cable to host local injection pages, manage and send components, and install local game files. The computer uses Wi-Fi to download resources and a separate Ethernet interface for the PS5. No router is needed between the computer and console.
 
-> **Technical exchange and scope of use:** This project provides local network services and file transfer tools for technical discussion and authorized testing. Its repository and builds do not bundle PS5 exploits, jailbreak scripts, third party ELF files, or game content; third party components are downloaded only after a user action. Read the [disclaimer](#disclaimer) below. “Technical exchange” does not itself grant permission to access or modify a device or run third party content.
+**[Download the latest version](https://github.com/MarcusYuan/ps5-lan-workbench/releases/latest)** · [Detailed guide](guides/usage.en.md) · [Contact and feedback](#contact-and-community)
 
-> **Verification status:** Core services and downloads have automated tests. The certificate prompt, page entry point, and subsequent behavior on PS5 firmware 13.60 still need testing on hardware. “PS5 HTTPS access” only means the app received a matching request.
+> For technical exchange and authorized testing. Web resources, third-party ELFs, and game content are not bundled. PS5 hardware compatibility still requires verification; a completed transfer does not confirm successful execution on the console.
 
-## Features
+## Download and open
 
-| Feature | Description |
+Expand **Assets** on the download page and choose a package for your computer:
+
+| Your computer | Filename contains | How to open |
+| --- | --- | --- |
+| 64-bit Windows | `windows-x64-setup.exe` | Install, then launch |
+| 64-bit Windows, portable use | `windows-x64-portable.exe` | Launch directly |
+| Mac with Apple silicon (M series) | `macos-arm64.dmg` | Open the DMG and drag the app into Applications |
+| Mac with an Intel processor | `macos-x64.dmg` | Open the DMG and drag the app into Applications |
+
+ZIP packages are also available for macOS. **Source code contains the source files; choose an app package from the table.** Builds are unsigned and macOS builds are not notarized, so your system may block opening them.
+
+## Connection and IP settings
+
+Connect the computer's Wi-Fi interface to your usual Wi-Fi network. **Connect its Ethernet interface directly to the PS5 with a cable.** Configure the wired link manually:
+
+| Setting | Computer Ethernet interface | PS5 wired network |
+| --- | --- | --- |
+| IPv4 address | `192.168.100.1` | `192.168.100.2` |
+| Subnet mask | `255.255.255.0` | `255.255.255.0` |
+| Default gateway | Leave blank; Wi-Fi continues to provide internet access | `192.168.100.1` |
+| Primary DNS | Leave blank; keep existing Wi-Fi settings | `192.168.100.1` |
+
+In the app, select the **Ethernet interface at `192.168.100.1`** and save **`192.168.100.2` as the PS5 address**. The first hosts web pages; the second receives components and game files. Setting a gateway does not automatically enable internet sharing on the computer. Keep network bridging and internet sharing disabled for this setup.
+
+**Local use does not require internet access on the PS5.** The computer needs internet access to initially download the app, web repository, and components. Once downloaded, local hosting, cached component delivery, and local file installation use the cable. Any internet requirement of the web page or third-party component depends on the selected resource.
+
+## Seven steps from setup to playing
+
+<details>
+<summary>View the direct connection setup and seven-step diagram</summary>
+
+![Direct computer-to-PS5 network setup and seven-step workflow](guides/assets/direct-connect-flow.en.png)
+
+</details>
+
+| Step | What to do | Why |
+| --- | --- | --- |
+| 1. Download and launch | Get the app using the download link above. On Windows, right-click and select “Run as administrator.” On macOS, grant permissions when starting services. | Local DNS and web services need the relevant ports and system permissions. |
+| 2. Configure the network and disable automatic updates | Apply the wired IP settings above, select the Ethernet interface in the app, and save the PS5 address. Disable automatic system software downloads and installation in the PS5 settings. | Fixed addresses allow direct communication; disabling automatic updates avoids firmware changes that may affect resource compatibility. |
+| 3. Download the web repository and start services | Under “File source,” enter a repository or direct HTTPS ZIP URL that matches your firmware and that you are authorized to use. Click “Download and verify” → “Start local services.” The entry file is usually `index.html`. | Store the injection web resources on the computer, then provide local web and DNS services to the PS5. |
+| 4. Open the PS5 User's Guide for injection | Go to Settings → Guide & Tips, Health & Safety, and Other Information → User's Guide. Follow the selected page's instructions and confirm the injection result on the console. Menu names can vary with language or firmware. | Primary DNS directs the relevant User's Guide domain to the computer. Injection behavior and firmware compatibility depend on the selected repository. |
+| 5. Manage and send components from the computer | Confirm the PS5 ELF Loader accepts computer connections. Under “Install components,” download the components you need, click “Load on PS5,” and confirm startup on the console. Cached components can be sent again. | The receiver available after injection accepts components; the required management service must run before game installation. |
+| 6. Select and install a local game file | Start PKG Manager on the PS5. Under “Install a local PKG,” choose or drop an authorized `.pkg`, click “Install on PS5,” and keep the computer and file available until installation feedback returns. | The PS5 reads the installation file from the computer and PKG Manager handles installation, without downloading the game on the console. |
+| 7. Confirm the result and start playing | Check installation on the PS5 and try launching the game. Confirm that required components are running and the content matches your firmware. | Transfer completion, successful installation, and actual startup are separate states; check the console's result. |
+
+Available components include WebKit Autoloader, PKG Manager, Payload Manager, Kstuff, FTP Server, and Web File Manager. Choose what you need. [Component details and prerequisites](guides/usage.en.md#components-and-local-pkgs)
+
+For a complete game folder or an `.exfat` / `.ffpkg` image, replace step 6 with “Send game folder / image.” Start an FTP Server that accepts anonymous login; the default port is `2121`. Files go to `/data/homebrew/` and existing destinations are rejected. Then mount and launch through a compatible loader prepared separately. Images differ from `.pkg` installation packages. [Folder and image transfers](guides/usage.en.md#ftp-transfer-of-game-folders-and-images)
+
+## If something goes wrong
+
+| Problem | Check first |
 | --- | --- |
-| Local web hosting | Download and check a user supplied GitHub repository or HTTPS ZIP, then host its web files over local HTTPS and HTTP. |
-| DNS redirection | Answer A queries for a configured domain with the selected computer IPv4 address; other domains are not forwarded. |
-| Component actions | Download fixed upstream WebKit Autoloader, PKG Manager, Kstuff FPKG, Payload Manager, FTP Server (drakmor), and PS5 Web File Manager release assets on request, check their pinned SHA-256 hashes, and send ELF files on request. |
-| Local PKG installation | Select one `.pkg` on your computer and transfer it through PKG Manager Direct Install on the PS5. |
-| Game folder / image transfer | Upload a complete game folder or an `.exfat` / `.ffpkg` image through FTP to `/data/homebrew/` on PS5. Completion does not confirm mounting or game startup. |
-| Status and logs | Track services, PS5 HTTPS requests, downloads, and remote tasks separately. |
+| Which IP address should I use? | Select the computer Ethernet interface at `192.168.100.1`; save `192.168.100.2` as the PS5 address. |
+| A download fails | Use a repository URL or direct ZIP URL. For slow GitHub downloads, try “GitHub mirror acceleration”; turn it off if it fails. It uses a third-party service. |
+| Local services will not start | Read the app's error message and check system permissions and occupied ports. |
+| PS5 cannot open the page | Check the direct Ethernet cable, both IP addresses and subnet masks, PS5 primary DNS `192.168.100.1`, and whether services are running on the Ethernet interface. |
+| A component, PKG, or FTP connection fails | Check the PS5 address and confirm the required Loader, PKG Manager, or FTP Server is running on the console. |
+| The result is unconfirmed | Check the actual result on the PS5 before repeating the operation. |
 
-Components, web files, and PKGs are selected or obtained by the user and are not bundled with the app. Archive checks cover the URL, structure, and entry file, among other basic conditions; they are not a security audit of web scripts.
-
-## Download and run
-
-Download published versions from [Releases](https://github.com/MarcusYuan/ps5-lan-workbench/releases): a Windows x64 installer and portable executable, plus separate DMG and ZIP packages for macOS Intel (x64) and Apple Silicon (arm64), with a combined `SHA256SUMS.txt`. Pushing a `v*` tag matching the version in `package.json` builds and publishes a Release. Pushes to `main` and manual runs of [Build desktop packages](https://github.com/MarcusYuan/ps5-lan-workbench/actions/workflows/build.yml) produce time limited Actions artifacts only. The packages are unsigned; macOS Gatekeeper may block them.
-
-To run from source, use Node.js 22.12 or later:
-
-```bash
-npm ci
-node node_modules/electron/install.js
-npm start
-```
-
-`npm ci` normally installs the Electron runtime; the `install.js` command can complete that download if necessary. See [Development and builds](#development-and-builds) for the other commands.
-
-## Host a web page locally
-
-1. Connect the computer and PS5 to the same local network. In the app, select the computer's IPv4 network interface that faces the PS5.
-2. Under “File source,” enter a public GitHub repository root URL, such as `https://github.com/owner/repository`, or a direct HTTPS ZIP URL. Set the relative path of the web entry file inside the archive; the default is `index.html`. A Release page URL is not a direct ZIP URL.
-3. Click “Download and verify.” For a GitHub repository, the app resolves the default branch to an exact commit before downloading the archive. Files go into the app's user data directory. A failed or canceled download retains the previous usable files.
-4. Click “Start local services.” By default, the app listens on DNS UDP/TCP 53, HTTPS 443, and HTTP 8000. Grant any required system permission. An occupied port produces an error.
-5. Set the PS5 primary DNS server to the computer IPv4 address shown in the app. Then try opening the page through the PS5 User's Guide entry point. The HTTP URL is for computer or local network testing only.
-6. Check “PS5 HTTPS access” and the activity log. A received request does not prove that the PS5 trusts the self signed certificate or that a page or third party program ran successfully.
-
-The app generates a self signed certificate with a SAN for the target domain and renews it when the domain changes or expiry approaches. It does not install the certificate as a system root.
-
-## Components and local PKGs
-
-1. Enter and save the PS5 IPv4 address separately at the top of the app. Saving it does not probe the console. The computer interface address remains the address for DNS and web hosting.
-2. Under “Install components,” inspect the upstream source and download the component you need. The app verifies the pinned release asset's SHA-256 hash. Only when you click “Load on PS5” does it check the default port 9021 and send the ELF. Confirm WebKit Autoloader and Kstuff FPKG operation on the PS5; PKG Manager readiness is checked through its default port 8844.
-3. Payload Manager v0.5.2 can be checked and its management page opened without a local ELF download. The app checks its version and service response on port 8084. Loading skips the send when it is already running; after a send the app waits up to 30 seconds for confirmation. Payload Manager may execute an existing console autoload list. This app does not change that list.
-4. Under “Install a local PKG,” select or drop one `.pkg` from your computer and click “Install on PS5.” The app transfers it in segments through PKG Manager Direct Install. This needs no SMB share and does not depend on port 9021. Keep the computer and source file available until the PS5 reports an installation result.
-
-On firmware 7.00–13.60, WebKit Autoloader's default ELF Loader may accept connections only from the PS5 itself. To send an ELF from a computer, first enable LAN connections according to the [upstream instructions](https://github.com/itsPLK/ps5-webkit-autoloader/blob/v0.5.1/README.md). Payload Manager and PKG Manager are different programs.
-
-Pinned releases: WebKit Autoloader v0.5.1, PKG Manager v1.4.1, Kstuff FPKG 1.13-fpkg-dr-test5, Payload Manager v0.5.2, FTP Server (drakmor) 1.16-ng-stable, and PS5 Web File Manager v1.9. Download an older cached Autoloader again to pass the new checksum. Relapse in Autoloader v0.5.1 requires an active Wi-Fi or Ethernet connection, even without internet access.
-
-After sending FTP Server, confirm startup on the console and connect an FTP client to the PS5 address on port 2121. After sending Web File Manager, open `http://<PS5-IP>:<reported-port>/` in your browser. Its default port is 8888 and it tries higher ports if occupied; use the startup notification. These two components report transmission only. This project has not verified their operation on firmware 13.40. Archive extraction requires the separately obtained upstream `wfm-7zip-helper.elf`; this app does not download or install that helper.
-
-Kstuff now uses the user supplied [GBAtemp test5 attachment](https://gbatemp.net/attachments/kstuff-1-13-fpkg-dr-test5-elf-7z.593030/), extracted after download. Both the archive and ELF have pinned sizes and SHA-256 hashes computed from the downloaded files; these have not been compared with author published hashes. FPKG compatibility on firmware 13.40/13.60 is unverified. Download again to replace the old Lite 1.11 cache; the component ID stays compatible. GBAtemp downloads directly without the GitHub mirror.
-
-### FTP transfer of game folders and images
-
-1. Save the PS5 target address and start FTP Server on the console. Sending its ELF does not confirm FTP is running.
-2. Under “Send game folder / image”, choose a complete game root folder or an existing `.exfat` / `.ffpkg` image. Folders must contain a nonempty `eboot.bin` and a `sce_sys/param.json` with a `titleId`. Symbolic links, directory junctions and unsafe filenames are rejected. Image selection checks the extension and basic file conditions, not internal game contents or compatibility. `.ffpkg` is an image, distinct from an FPKG installation package.
-3. Check the FTP port (default 2121) and click “Send to PS5”. This feature uses anonymous FTP login without storing credentials, and requires a console service that permits that login method.
-4. Files are staged under `/data/.ps5-local-host-<task-id>/`. After checking each remote file size, the app renames the completed folder or image into `/data/homebrew/<selected-name>`. Existing destinations are rejected; do not modify the destination with other tools during transfer. Size checking is not a content hash check. Source file changes stop the task.
-5. Progress and cancellation appear in the task area. After failure or cancellation, the app attempts to remove only this task's temporary files; technical details record the staging path when cleanup fails. A lost connection during the final rename produces an unconfirmed result that needs checking on PS5. Resume, overwrite updates, storage destination selection and image creation are not available yet.
-6. Confirm recognition, mounting and startup through a compatible console loader such as ShadowMountPlus. Prepare that loader separately; this app does not automatically download, start or verify it. Firmware 13.00 and individual game compatibility still require hardware testing.
-
-### GitHub mirror
-
-“GitHub mirror acceleration” under “File source” is off by default. When enabled, new downloads of public GitHub repository API responses, ZIPs, and component assets go through the third party `gh-proxy.org` service. Changing the setting does not interrupt a current task or change DNS, HTTPS, or PS5 connections. The mirror provider receives the requested public resource URL. The app does not route account credentials, URLs with query parameters, or ZIPs from other sites through the mirror. Component SHA-256 checks still apply. Ordinary web ZIPs have no pinned trusted hash, so assess the source and mirror yourself. If the mirror fails, turn it off and retry.
-
-## Network and local data
-
-| Area | Behavior |
-| --- | --- |
-| DNS | Only A queries for the target domain (default `manuals.playstation.net`) receive the selected computer IPv4 address. AAAA has no address; other domains return NXDOMAIN. Public DNS requests are not forwarded. |
-| Web | HTTPS and HTTP serve the same downloaded files. `/document/<language>/ps5/` redirects to the selected entry file; missing files return 404. |
-| Internet requests | The app contacts upstream sources only for user initiated downloads. User provided pages or scripts may make their own external requests. |
-| PS5 connections | The app contacts the saved PS5 address when the user requests ELF delivery, PKG installation, game folder / image transfer, or a component status check. |
-| Local storage | Configuration, downloaded files, and certificate private keys live in Electron's user data directory, outside the package. Services must be started manually after relaunch. |
-
-To check whether a page works offline, disconnect the computer from the internet after downloading and starting the services, while keeping its local connection to the PS5.
-
-## Troubleshooting
-
-| Symptom | Check |
-| --- | --- |
-| Services will not start | Check the selected interface, system permissions, and whether another DNS, proxy, or app occupies ports 53, 443, or 8000. |
-| The PS5 cannot open the page | Check that both devices are on the same LAN, that the PS5 primary DNS points to the selected computer IPv4 address, and that HTTPS requests appear in the log. Certificate and page behavior still need hardware confirmation. |
-| A download fails | Check the GitHub repository or direct HTTPS ZIP URL and the relative entry path. If using the mirror, turn it off and retry. |
-| ELF or PKG action fails | Check the saved PS5 IPv4 address, the relevant service on port 9021 or 8844, and the task log. |
-
-If port 53 is occupied, use `--diagnostic-ports` for temporary computer side tests on DNS 5354, HTTPS 8443, and HTTP 18000:
-
-```bash
-npm start -- --diagnostic-ports
-```
-
-The same flag can be appended when launching a packaged app from a command line. Diagnostic mode cannot be used for PS5 access because the PS5 DNS setting cannot specify port 5354. A normal relaunch restores the default ports.
-
-## Development and builds
-
-```bash
-npm test
-npm run pack:dir
-npm run pack:mac
-npm run pack:win
-```
-
-`pack:mac` produces a DMG and ZIP on macOS; `pack:win` produces an NSIS installer and portable executable on Windows. Distributors need their own credentials for macOS signing and notarization and Windows signing. `npm test` uses ordinary test pages and high local ports to cover downloads, DNS, HTTPS, static resources, certificate reuse, and port release. Automated tests do not replace PS5 hardware verification.
+See the [detailed guide](guides/usage.en.md) for further troubleshooting. Developers can find [source setup and builds](guides/usage.en.md#run-from-source) and the [release rules](rules/github-release.md).
 
 ## Disclaimer
 

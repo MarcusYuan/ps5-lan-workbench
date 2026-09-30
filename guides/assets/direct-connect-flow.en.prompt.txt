@@ -1,0 +1,58 @@
+Use case: text-localization.
+Edit the attached Chinese PS5 Local Host seven-step poster into its ENGLISH VERSION. The input is the edit target and visual layout reference. Keep the same direct-computer-to-PS5 network illustration, seven numbered steps, white/navy/blue/teal style, simple icons and action-versus-why columns. Reflow text, enlarge cards or increase portrait height as needed for excellent English readability. Render all labels in English, no Chinese remains. Do not add a router, change any IP, or imply guaranteed injection/installation/game startup. No additional steps, logos, addresses or claims. Keep one Wi-Fi connection on the computer and one direct Ethernet cable to the PS5. No internet-forwarding arrow to the PS5. Fully legible text, no cropping.
+
+Exact English content:
+
+TITLE: "Computer → PS5: Seven-Step Guide"
+SUBTITLE: "Manage components and install local game files from your computer"
+
+Network cloud: "Wi-Fi · Download resources on the computer"
+Computer panel: "Computer: Wi-Fi + direct Ethernet"
+"Ethernet IP: 192.168.100.1"
+"Subnet mask: 255.255.255.0"
+"Leave Ethernet gateway blank; keep Wi-Fi settings"
+Cable label: "Direct Ethernet to PS5 · No router needed"
+PS5 panel: "PS5: Manual wired settings"
+"IP: 192.168.100.2"
+"Subnet mask: 255.255.255.0"
+"Gateway: 192.168.100.1"
+"Primary DNS: 192.168.100.1"
+
+Prominent app settings band, split into two readable lines if needed:
+"App interface: Ethernet 192.168.100.1"
+"PS5 target: 192.168.100.2"
+
+Each numbered card: title, detail, and a visually distinct right column headed "WHY".
+
+1 TITLE: "Download and launch the app"
+DETAIL: "Windows: Run as administrator. macOS: grant permissions when starting services."
+WHY: "Local DNS and web services need the relevant ports and system permissions."
+
+2 TITLE: "Set both IPs and disable automatic updates"
+DETAIL: "Apply the wired settings above. Disable PS5 automatic system software downloads and installation."
+WHY: "Fixed addresses enable direct communication; automatic firmware changes can affect compatibility."
+
+3 TITLE: "Download web resources and start services"
+DETAIL: "Choose resources matching your firmware. Click “Download and verify” → “Start local services”."
+WHY: "Store injection pages on the computer, then serve them locally to the PS5."
+
+4 TITLE: "Open the PS5 User's Guide for web injection"
+DETAIL: "Settings → Guide & Tips, Health & Safety, and Other Information → User's Guide"
+WHY: "Primary DNS directs the relevant domain to the computer. Follow the page and confirm the result."
+
+5 TITLE: "Download components and send them to PS5"
+DETAIL: "Ensure ELF Loader accepts computer connections. Click “Download” → “Load on PS5” as needed."
+WHY: "The console receives components that provide the services required for installation."
+
+6 TITLE: "Select a local game file and install it"
+DETAIL: "Start PKG Manager on PS5. Select a local .pkg and click “Install on PS5”."
+WHY: "The PS5 reads the file from the computer; its management service handles installation."
+
+7 TITLE: "Confirm installation and startup, then play"
+DETAIL: "On PS5, check installation and required components, then try launching the game."
+WHY: "Transfer completion, successful installation and actual execution need separate confirmation."
+
+BOTTOM TITLE: "Local use: PS5 does not need internet access"
+BOTTOM BODY: "The computer needs internet for initial downloads. Afterward, use the cable for local web hosting, cached component delivery and local file installation."
+BOTTOM NOTE: "Any external dependencies depend on the selected page or component. Keep network bridging and internet sharing disabled."
+FOOTER: "For technical exchange and authorized testing. Supply your own content; injection and game compatibility still require console verification."

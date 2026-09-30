@@ -1,0 +1,58 @@
+Use case: infographic-diagram. Generate ONE polished high-resolution Simplified Chinese instructional poster, portrait, approximately 2400x3400, for the actual PS5 Local Host workflow. Do not reuse a four-route grid. There is one ordered seven-step process. Audience: ordinary first-time users. Readable large Chinese sans-serif type, navy text on white, blue and teal accents, generous spacing. No invented UI screenshots, no logos or watermarks. Exactly preserve the supplied text and addresses. Every step must have a clear ACTION and WHY. Use a narrow vertical numbered spine, seven full-width compact step cards, and a network illustration at top.
+
+CRITICAL NETWORK GEOMETRY: show exactly ONE computer and ONE PS5 directly connected by an Ethernet cable. Above the computer only, a small Wi-Fi symbol connects to a cloud labelled “正常 Wi-Fi · 电脑下载资源”. Computer has separate wireless and wired connections. No router device or router icon anywhere. No Wi-Fi connection to PS5. No internet arrow through computer to PS5. Under the computer and PS5 show separate IP configuration panels. The direct cable is labelled “有线网卡直连 PS5 · 无需路由器”. These are fixed configuration instructions, not example IPs. Do not show any other addresses.
+
+TITLE: “电脑直连 PS5：七步使用指南”
+SUBTITLE: “在电脑上管理插件、安装本地游戏文件”
+
+NETWORK:
+Cloud: “正常 Wi-Fi · 电脑下载资源”
+Computer: “电脑：无线联网，有线直连”
+Computer settings:
+“有线 IP：192.168.100.1”
+“子网掩码：255.255.255.0”
+“有线网关留空，Wi-Fi 保持原设置”
+Cable: “有线网卡直连 PS5 · 无需路由器”
+Console: “PS5：有线手动配置”
+Console settings:
+“IP：192.168.100.2”
+“子网掩码：255.255.255.0”
+“网关：192.168.100.1”
+“主 DNS：192.168.100.1”
+
+Below network, one short prominent band:
+“应用选电脑有线网卡 192.168.100.1；PS5 目标填 192.168.100.2”
+
+STEP 1 ACTION: “下载软件，以管理员身份打开”
+DETAIL: “Windows 右键选择管理员运行；macOS 按服务提示授权。”
+WHY: “为什么：本地 DNS 和网页服务需要相应端口与系统权限。”
+
+STEP 2 ACTION: “配置电脑与 PS5 的 IP，关闭自动更新”
+DETAIL: “按上图填写有线网络参数；关闭 PS5 系统软件自动下载与安装。”
+WHY: “为什么：固定地址便于直连；避免自动更新改变固件兼容性。”
+
+STEP 3 ACTION: “在电脑下载所需网页仓库，启动服务”
+DETAIL: “选择匹配固件的资源，点击“下载并检查” → “启动本地服务”。”
+WHY: “为什么：先将注入网页存到电脑，再向 PS5 提供本地服务。”
+
+STEP 4 ACTION: “在 PS5 打开用户指南，执行网页注入”
+DETAIL: “设置 → 指南与提示、健康与安全以及其他信息 → 用户指南”
+WHY: “为什么：主 DNS 将相关域名指向电脑；按网页说明操作并确认结果。”
+
+STEP 5 ACTION: “在电脑下载插件，并推送到 PS5”
+DETAIL: “确认 ELF Loader 允许电脑连接；按需“下载” → “加载到 PS5”。”
+WHY: “为什么：主机接收插件后，才能启动后续安装所需服务。”
+
+STEP 6 ACTION: “在电脑选择游戏文件，安装到 PS5”
+DETAIL: “先启动 PKG Manager，再选择本地 .pkg，点击“安装到 PS5”。”
+WHY: “为什么：PS5 从电脑读取文件，由主机上的管理服务处理安装。”
+
+STEP 7 ACTION: “确认安装与启动结果，开始游玩”
+DETAIL: “到 PS5 确认安装完成、所需插件运行，并尝试启动游戏。”
+WHY: “为什么：发送完成、安装成功和实际运行，需要分别确认。”
+
+BOTTOM BAND title: “本地使用：PS5 无需连接互联网”
+BOTTOM BODY: “电脑首次下载资源需要网络；下载后可通过网线托管网页、推送缓存插件和安装本地文件。”
+BOTTOM NOTE: “网页或插件自身的外网依赖取决于所选资源；网络桥接与互联网共享保持关闭。”
+FOOTER: “仅供技术交流与合法授权测试。内容自行准备，注入及游戏运行兼容性仍需实机确认。”
+Constraints: use seven numbered cards in order, all supplied information legible, no unconditional success claim, no router, no four alternative paths, no additional steps or addresses, no cropping.
