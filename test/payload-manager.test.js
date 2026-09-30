@@ -16,8 +16,8 @@ function fetchRoutes(routes) {
   };
 }
 
-test('pinned component metadata includes official Kstuff and Payload Manager assets', () => {
-  assert.equal(component('kstuffLite').sha256, 'ab9a6cb4d3b1daf139d4d646e402b1cf569071acd64599c936d7a3a6164dc779');
+test('pinned component metadata includes pinned Kstuff test5 and official Payload Manager assets', () => {
+  assert.equal(component('kstuffLite').sha256, '829b45fe871dd64fbd53874ae4558076c2f1e1f203fe1ab52db5510d5fc45923');
   assert.equal(component('payloadManager').size, 2410776);
   assert.equal(component('payloadManager').sha256, '62b3ba2a4937c2afc502f9a4e7242cca538610ebb4ae2800c7c6f72e7f268e7c');
   assert.equal(component('autoloader').verification, 'sent');

@@ -14,7 +14,7 @@ PS5 Local Host 是一个用于局域网测试的桌面工具。它在电脑上�
 | --- | --- |
 | 本地网页服务 | 下载并检查用户指定的 GitHub 仓库或 HTTPS ZIP；通过本地 HTTPS 和 HTTP 托管网页文件。 |
 | DNS 重定向 | 将指定域名的 A 查询指向所选电脑 IPv4；不转发其他域名的查询。 |
-| 组件操作 | 用户主动下载固定上游发布的 WebKit Autoloader、PKG Manager、Kstuff Lite、Payload Manager 附件，校验内置 SHA-256 后可发送 ELF。 |
+| 组件操作 | 用户主动下载固定上游发布的 WebKit Autoloader、PKG Manager、Kstuff FPKG、Payload Manager、FTP Server（drakmor）、PS5 Web File Manager 附件，校验内置 SHA-256 后可发送 ELF。 |
 | 本地 PKG 安装 | 选择电脑上的单个 `.pkg`，通过 PS5 上的 PKG Manager Direct Install 传输并安装。 |
 | 状态与日志 | 分别显示服务状态、PS5 HTTPS 请求、下载与远程任务进度。 |
 
@@ -48,11 +48,17 @@ npm start
 ## 组件与本地 PKG
 
 1. 在顶部单独填写并保存 PS5 的 IPv4 地址。保存地址不会探测主机；电脑网卡地址仍用于 DNS 和网页服务。
-2. 在“安装插件”区查看上游来源，主动下载所需组件。应用会校验固定发布附件的 SHA-256；只有点击“加载到 PS5”后，才会检查默认 9021 端口并发送 ELF。WebKit Autoloader 与 Kstuff Lite 发送后需在 PS5 上确认运行；PKG Manager 就绪情况通过默认 8844 接口检查。
+2. 在“安装插件”区查看上游来源，主动下载所需组件。应用会校验固定发布附件的 SHA-256；只有点击“加载到 PS5”后，才会检查默认 9021 端口并发送 ELF。WebKit Autoloader 与 Kstuff FPKG 发送后需在 PS5 上确认运行；PKG Manager 就绪情况通过默认 8844 接口检查。
 3. Payload Manager v0.5.2 的“检查状态”和“打开管理页面”无需先下载 ELF；应用通过固定端口 8084 检查版本与服务响应，确认后才打开官方页面。加载时若已运行则不重复发送；发送后最多等待 30 秒确认，超时只报告“已发送，启动未确认”。Payload Manager 可能执行主机已有自动加载列表，本应用不会修改该列表。
 4. 在“安装本地 PKG”区选择或拖入电脑上的单个 `.pkg`，点击“安装到 PS5”。应用通过 PKG Manager Direct Install 分段传输，无需 SMB 共享，也不依赖 9021。保持电脑和源文件可用，直到 PS5 返回安装结果。
 
-在 7.00–13.60 固件上，WebKit Autoloader 默认 ELF Loader 可能仅接受 PS5 本机连接。若需从电脑发送 ELF，请先按[上游说明](https://github.com/itsPLK/ps5-webkit-autoloader/blob/v0.5.0/README.md)启用局域网连接。Payload Manager 与 PKG Manager 是不同程序。
+在 7.00–13.60 固件上，WebKit Autoloader 默认 ELF Loader 可能仅接受 PS5 本机连接。若需从电脑发送 ELF，请先按[上游说明](https://github.com/itsPLK/ps5-webkit-autoloader/blob/v0.5.1/README.md)启用局域网连接。Payload Manager 与 PKG Manager 是不同程序。
+
+固定版本：WebKit Autoloader v0.5.1、PKG Manager v1.4.1、Kstuff FPKG 1.13-fpkg-dr-test5、Payload Manager v0.5.2、FTP Server（drakmor）1.16-ng-stable、PS5 Web File Manager v1.9。缓存的旧版 Autoloader ELF 需重新下载才能通过新版校验。Autoloader v0.5.1 的 Relapse 需要有效的 Wi-Fi 或以太网连接，即使没有互联网也需要。
+
+发送 FTP Server 后，在主机上确认启动，再用 FTP 客户端连接 PS5 地址的 2121 端口。发送 Web File Manager 后，在浏览器打开 `http://<PS5-IP>:<通知中的端口>/`；默认 8888，端口占用时尝试更高端口，以启动通知为准。这两个组件只报告发送结果，本项目尚未验证其在 13.40 上的运行。解压功能需要另行获取上游 `wfm-7zip-helper.elf`；本应用不下载或安装此 helper。
+
+Kstuff 改为用户指定的 [GBAtemp test5 附件](https://gbatemp.net/attachments/kstuff-1-13-fpkg-dr-test5-elf-7z.593030/)，下载后自动解压。压缩包和 ELF 分别固定大小与 SHA-256；这些校验值来自本地下载核验，尚未与作者公布值核对。13.40/13.60 FPKG 兼容性未验证。旧 Lite 1.11 缓存需重新下载；组件 ID 保持兼容。GBAtemp 下载直连，不使用 GitHub 镜像。
 
 ### GitHub 镜像加速
 

@@ -14,7 +14,7 @@ PS5 Local Host is a desktop tool for local network testing. It runs DNS and web 
 | --- | --- |
 | Local web hosting | Download and check a user supplied GitHub repository or HTTPS ZIP, then host its web files over local HTTPS and HTTP. |
 | DNS redirection | Answer A queries for a configured domain with the selected computer IPv4 address; other domains are not forwarded. |
-| Component actions | Download fixed upstream WebKit Autoloader, PKG Manager, Kstuff Lite, and Payload Manager release assets on request, check their pinned SHA-256 hashes, and send ELF files on request. |
+| Component actions | Download fixed upstream WebKit Autoloader, PKG Manager, Kstuff FPKG, Payload Manager, FTP Server (drakmor), and PS5 Web File Manager release assets on request, check their pinned SHA-256 hashes, and send ELF files on request. |
 | Local PKG installation | Select one `.pkg` on your computer and transfer it through PKG Manager Direct Install on the PS5. |
 | Status and logs | Track services, PS5 HTTPS requests, downloads, and remote tasks separately. |
 
@@ -48,11 +48,17 @@ The app generates a self signed certificate with a SAN for the target domain and
 ## Components and local PKGs
 
 1. Enter and save the PS5 IPv4 address separately at the top of the app. Saving it does not probe the console. The computer interface address remains the address for DNS and web hosting.
-2. Under “Install components,” inspect the upstream source and download the component you need. The app verifies the pinned release asset's SHA-256 hash. Only when you click “Load on PS5” does it check the default port 9021 and send the ELF. Confirm WebKit Autoloader and Kstuff Lite operation on the PS5; PKG Manager readiness is checked through its default port 8844.
+2. Under “Install components,” inspect the upstream source and download the component you need. The app verifies the pinned release asset's SHA-256 hash. Only when you click “Load on PS5” does it check the default port 9021 and send the ELF. Confirm WebKit Autoloader and Kstuff FPKG operation on the PS5; PKG Manager readiness is checked through its default port 8844.
 3. Payload Manager v0.5.2 can be checked and its management page opened without a local ELF download. The app checks its version and service response on port 8084. Loading skips the send when it is already running; after a send the app waits up to 30 seconds for confirmation. Payload Manager may execute an existing console autoload list. This app does not change that list.
 4. Under “Install a local PKG,” select or drop one `.pkg` from your computer and click “Install on PS5.” The app transfers it in segments through PKG Manager Direct Install. This needs no SMB share and does not depend on port 9021. Keep the computer and source file available until the PS5 reports an installation result.
 
-On firmware 7.00–13.60, WebKit Autoloader's default ELF Loader may accept connections only from the PS5 itself. To send an ELF from a computer, first enable LAN connections according to the [upstream instructions](https://github.com/itsPLK/ps5-webkit-autoloader/blob/v0.5.0/README.md). Payload Manager and PKG Manager are different programs.
+On firmware 7.00–13.60, WebKit Autoloader's default ELF Loader may accept connections only from the PS5 itself. To send an ELF from a computer, first enable LAN connections according to the [upstream instructions](https://github.com/itsPLK/ps5-webkit-autoloader/blob/v0.5.1/README.md). Payload Manager and PKG Manager are different programs.
+
+Pinned releases: WebKit Autoloader v0.5.1, PKG Manager v1.4.1, Kstuff FPKG 1.13-fpkg-dr-test5, Payload Manager v0.5.2, FTP Server (drakmor) 1.16-ng-stable, and PS5 Web File Manager v1.9. Download an older cached Autoloader again to pass the new checksum. Relapse in Autoloader v0.5.1 requires an active Wi-Fi or Ethernet connection, even without internet access.
+
+After sending FTP Server, confirm startup on the console and connect an FTP client to the PS5 address on port 2121. After sending Web File Manager, open `http://<PS5-IP>:<reported-port>/` in your browser. Its default port is 8888 and it tries higher ports if occupied; use the startup notification. These two components report transmission only. This project has not verified their operation on firmware 13.40. Archive extraction requires the separately obtained upstream `wfm-7zip-helper.elf`; this app does not download or install that helper.
+
+Kstuff now uses the user supplied [GBAtemp test5 attachment](https://gbatemp.net/attachments/kstuff-1-13-fpkg-dr-test5-elf-7z.593030/), extracted after download. Both the archive and ELF have pinned sizes and SHA-256 hashes computed from the downloaded files; these have not been compared with author published hashes. FPKG compatibility on firmware 13.40/13.60 is unverified. Download again to replace the old Lite 1.11 cache; the component ID stays compatible. GBAtemp downloads directly without the GitHub mirror.
 
 ### GitHub mirror
 
