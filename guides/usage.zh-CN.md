@@ -41,11 +41,23 @@
 
 在 7.00–13.60 固件上，WebKit Autoloader 默认 ELF Loader 可能仅接受 PS5 本机连接。若需从电脑发送 ELF，请先按[上游说明](https://github.com/itsPLK/ps5-webkit-autoloader/blob/v0.5.1/README.md)启用局域网连接。Payload Manager 与 PKG Manager 是不同程序。
 
-固定版本：WebKit Autoloader v0.5.1、PKG Manager v1.4.1、Kstuff FPKG 1.13-fpkg-dr-test5、Payload Manager v0.5.2、FTP Server（drakmor）1.16-ng-stable、PS5 Web File Manager v1.9。缓存的旧版 Autoloader ELF 需重新下载才能通过新版校验。Autoloader v0.5.1 的 Relapse 需要有效的 Wi-Fi 或以太网连接，即使没有互联网也需要。
+固定版本：WebKit Autoloader v0.5.1、PKG Manager v1.4.1、Kstuff FPKG 1.13-fpkg-dr-test5、Payload Manager v0.5.2、ShadowMountPlus 1.7beta2、FTP Server（drakmor）1.16-ng-stable、PS5 Web File Manager v1.9。缓存的旧版 Autoloader ELF 需重新下载才能通过新版校验。Autoloader v0.5.1 的 Relapse 需要有效的 Wi-Fi 或以太网连接，即使没有互联网也需要。
 
 发送 FTP Server 后，在主机上确认启动，再用 FTP 客户端连接 PS5 地址的 2121 端口。发送 Web File Manager 后，在浏览器打开 `http://<PS5-IP>:<通知中的端口>/`；默认 8888，端口占用时尝试更高端口，以启动通知为准。这两个组件只报告发送结果，本项目尚未验证其在 13.40 上的运行。解压功能需要另行获取上游 `wfm-7zip-helper.elf`；本应用不下载或安装此 helper。
 
 Kstuff 改为用户指定的 [GBAtemp test5 附件](https://gbatemp.net/attachments/kstuff-1-13-fpkg-dr-test5-elf-7z.593030/)，下载后自动解压。压缩包和 ELF 分别固定大小与 SHA-256；这些校验值来自本地下载核验，尚未与作者公布值核对。13.40/13.60 FPKG 兼容性未验证。旧 Lite 1.11 缓存需重新下载；组件 ID 保持兼容。GBAtemp 下载直连，不使用 GitHub 镜像。
+
+### ShadowMountPlus 镜像加载
+
+本应用支持用户主动下载、校验并推送 [ShadowMountPlus 1.7beta2](https://github.com/drakmor/ShadowMountPlus/releases/tag/1.7beta2) 的 `shadowmountplus.elf`；不将该 ELF 附带在构建包中。固定大小和 SHA-256 已与 GitHub 发布附件核对。上游说明列出 Kstuff-lite v1.07+ 作为运行环境，1.7 系列声明支持至 13.60；本项目尚未验证具体固件、游戏或当前 Kstuff FPKG 测试版的组合。
+
+1. 在 PS5 准备允许电脑连接的 ELF Loader 和兼容的 Kstuff 环境。
+2. 在“安装插件”点击 ShadowMountPlus 的“下载” → “加载到 PS5”，检查主机的 ShadowMount+ 启动通知。本应用显示“ELF 已发送”只确认传输；未通过 API 确认服务运行或扫描结果。
+3. 已发送镜像应位于 `/data/homebrew/<文件名>`，例如 `/data/homebrew/PPSA22999.exfat`。ShadowMountPlus 默认扫描 `/data/homebrew`；若 `/data/shadowmount/config.ini` 设置了 `scanpath`，仅使用自定义扫描根，需包含该目录。
+4. 镜像内部的 `sce_sys/param.json` 和游戏文件应位于镜像根目录，不要额外套一层目录。等待扫描与游戏注册通知，再在 PS5 尝试启动。默认按需在游戏启动时挂载镜像；上传完成不会自动证明已注册或可运行。
+5. 无启动通知时先检查 ELF Loader；无游戏入口或无法启动时，查看 `/data/shadowmount/debug.log` 与主机通知，再检查扫描目录、镜像结构、完整性及运行环境。不要仅为加载插件重复上传已有镜像。
+
+上游管理 API 默认为 PS5 本机 `127.0.0.1:10101`，当前应用不自动修改其网络监听配置、不提供远程扫描或挂载控制。上游明确提示镜像挂载可能造成关机问题或数据损坏，使用前备份重要数据。[上游使用与排查说明](https://github.com/drakmor/ShadowMountPlus/blob/1.7beta2/README.md)
 
 ### 游戏目录与镜像的 FTP 发送
 
@@ -54,7 +66,7 @@ Kstuff 改为用户指定的 [GBAtemp test5 附件](https://gbatemp.net/attachme
 3. 确认 FTP 端口（默认 2121），点击“发送到 PS5”。本功能使用匿名 FTP 登录，不保存凭据，适用于允许该登录方式的主机 FTP 服务。
 4. 文件先上传到 `/data/.ps5-local-host-<任务标识>/`，逐文件核对远端大小后，再重命名至 `/data/homebrew/<所选目录或镜像名称>`。已有同名目标会拒绝传输；传输期间请勿用其他工具修改目标。大小核对不是内容哈希校验。源文件变化会中止任务。
 5. 进度及取消按钮位于任务区域。取消或失败后尝试清理本任务临时文件；无法清理时，技术详情记录残留路径。连接在最终重命名时中断则报告结果未确认，需到 PS5 检查。断点续传、覆盖更新、存储位置选择和镜像制作尚未提供。
-6. 完成后在 PS5 上确认兼容的加载器（例如 ShadowMountPlus）识别、挂载及启动。加载器需另行准备，本应用不自动下载、启动或验证它。PS5 13.00 及具体游戏的运行兼容性仍待实机验证。
+6. 完成后按[镜像加载步骤](#shadowmountplus-镜像加载)在 PS5 确认 ShadowMountPlus 扫描、注册及启动。可在“安装插件”主动下载并发送该加载器；本应用不会自动执行此操作，也不验证主机的挂载结果。PS5 13.00 及具体游戏的运行兼容性仍待实机验证。
 
 ### GitHub 镜像加速
 

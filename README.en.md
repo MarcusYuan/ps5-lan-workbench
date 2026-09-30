@@ -55,9 +55,15 @@ In the app, select the **Ethernet interface at `192.168.100.1`** and save **`192
 | 6. Select and install a local game file | Start PKG Manager on the PS5. Under “Install a local PKG,” choose or drop an authorized `.pkg`, click “Install on PS5,” and keep the computer and file available until installation feedback returns. | The PS5 reads the installation file from the computer and PKG Manager handles installation, without downloading the game on the console. |
 | 7. Confirm the result and start playing | Check installation on the PS5 and try launching the game. Confirm that required components are running and the content matches your firmware. | Transfer completion, successful installation, and actual startup are separate states; check the console's result. |
 
-Available components include WebKit Autoloader, PKG Manager, Payload Manager, Kstuff, FTP Server, and Web File Manager. Choose what you need. [Component details and prerequisites](guides/usage.en.md#components-and-local-pkgs)
+Available components include WebKit Autoloader, PKG Manager, Payload Manager, Kstuff, ShadowMountPlus, FTP Server, and Web File Manager. Choose what you need. [Component details and prerequisites](guides/usage.en.md#components-and-local-pkgs)
 
-For a complete game folder or an `.exfat` / `.ffpkg` image, replace step 6 with “Send game folder / image.” Start an FTP Server that accepts anonymous login; the default port is `2121`. Files go to `/data/homebrew/` and existing destinations are rejected. Then mount and launch through a compatible loader prepared separately. Images differ from `.pkg` installation packages. [Folder and image transfers](guides/usage.en.md#ftp-transfer-of-game-folders-and-images)
+For a complete game folder or an `.exfat` / `.ffpkg` image, replace step 6 with “Send game folder / image”:
+
+1. Start an FTP Server that accepts anonymous login on PS5, using port `2121` by default. Send files to `/data/homebrew/`; existing destinations are rejected.
+2. Under “Install components,” download **ShadowMountPlus 1.7beta2**, click “Load on PS5,” and confirm startup on the console. It needs a Kstuff environment matching your firmware; the current Kstuff FPKG test-version combination has not been verified on hardware.
+3. Check ShadowMountPlus scan and game registration notifications on PS5, then try launching. An already uploaded `PPSA22999.exfat` does not need uploading again just to load the component.
+
+Images are scanned, registered and mounted by the loader; `.pkg` files are installed through PKG Manager. [ShadowMountPlus usage and troubleshooting](guides/usage.en.md#shadowmountplus-image-loading) · [Folder and image transfers](guides/usage.en.md#ftp-transfer-of-game-folders-and-images)
 
 ## If something goes wrong
 

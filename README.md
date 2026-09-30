@@ -55,9 +55,15 @@ macOS 也提供 ZIP。**Source code 是源码，请选择上表中的应用包�
 | 6. 选择本地游戏文件并安装 | 先在 PS5 启动 PKG Manager。在“安装本地 PKG”中选择或拖入你有权使用的 `.pkg`，点击“安装到 PS5”，保持电脑与文件可用直至安装反馈返回。 | PS5 从电脑读取安装文件，由 PKG Manager 处理安装，无需在主机下载游戏。 |
 | 7. 确认结果并开始游玩 | 在 PS5 检查安装结果，尝试启动游戏；确认所需插件已运行且内容与固件兼容。 | 发送完成、安装成功与实际启动是不同状态，以主机上的结果为准。 |
 
-插件包括 WebKit Autoloader、PKG Manager、Payload Manager、Kstuff、FTP Server 和 Web File Manager，按需选择。[插件说明与前提条件](guides/usage.zh-CN.md#组件与本地-pkg)
+插件包括 WebKit Autoloader、PKG Manager、Payload Manager、Kstuff、ShadowMountPlus、FTP Server 和 Web File Manager，按需选择。[插件说明与前提条件](guides/usage.zh-CN.md#组件与本地-pkg)
 
-如果使用的是完整游戏目录或 `.exfat` / `.ffpkg` 镜像，第 6 步改用“发送游戏目录 / 镜像”，先启动支持匿名登录的 FTP Server，默认端口 `2121`。文件发送到 `/data/homebrew/`，已有同名目标会被拒绝；随后使用另行准备的兼容加载器挂载和启动。镜像与 `.pkg` 安装包不同。[目录与镜像传输说明](guides/usage.zh-CN.md#游戏目录与镜像的-ftp-发送)
+如果使用的是完整游戏目录或 `.exfat` / `.ffpkg` 镜像，第 6 步改用“发送游戏目录 / 镜像”：
+
+1. 在 PS5 启动支持匿名登录的 FTP Server，默认端口 `2121`，发送文件到 `/data/homebrew/`；已有同名目标会被拒绝。
+2. 在“安装插件”下载 **ShadowMountPlus 1.7beta2**，点击“加载到 PS5”，到主机确认启动。它需要与固件匹配的 Kstuff 运行环境；当前 Kstuff FPKG 测试版组合未经实机验证。
+3. 在 PS5 检查 ShadowMountPlus 的扫描和游戏注册通知，再尝试启动。已上传的 `PPSA22999.exfat` 无需仅为加载插件重新上传。
+
+镜像通过加载器扫描、注册和挂载，`.pkg` 则通过 PKG Manager 安装。[ShadowMountPlus 使用与排查](guides/usage.zh-CN.md#shadowmountplus-镜像加载) · [目录与镜像传输说明](guides/usage.zh-CN.md#游戏目录与镜像的-ftp-发送)
 
 ## 遇到问题
 

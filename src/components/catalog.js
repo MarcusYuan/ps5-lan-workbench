@@ -34,6 +34,14 @@ const CATALOG = Object.freeze({
     sha256: '62b3ba2a4937c2afc502f9a4e7242cca538610ebb4ae2800c7c6f72e7f268e7c',
     license: 'GPL-3.0',
   }),
+  shadowMountPlus: Object.freeze({
+    id: 'shadowMountPlus', name: 'ShadowMountPlus', version: '1.7beta2', verification: 'sent',
+    source: 'https://github.com/drakmor/ShadowMountPlus',
+    release: 'https://github.com/drakmor/ShadowMountPlus/releases/tag/1.7beta2',
+    asset: 'shadowmountplus.elf', size: 2437704,
+    sha256: '3f716a7b2220c7e87e87452ae05cad689ef842d3beb4cdad6c526cb6dfc2b6b5',
+    license: 'GPL-3.0',
+  }),
   ftpServer: Object.freeze({
     id: 'ftpServer', name: 'FTP Server (drakmor)', version: '1.16-ng-stable', verification: 'sent',
     source: 'https://github.com/drakmor/ftpsrv',
