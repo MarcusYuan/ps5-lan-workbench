@@ -435,6 +435,11 @@
       const id = card.dataset.component;
       const entry = state.components?.[id] || {};
       const downloading = entry.phase === 'downloading';
+      const choice = card.querySelector('.component-choice');
+      if (choice) {
+        choice.disabled = downloading || Boolean(active) || Boolean(remoteAction);
+        card.querySelector('.component-version').textContent = choice.selectedOptions[0].dataset.version;
+      }
       card.querySelector('.component-status').textContent = entry.error ? asText(entry.error) :
         downloading ? t('components.downloading', { progress: entry.progress ?? 0 }) :
           entry.phase === 'ready' ? t('components.ready') : t('components.notDownloaded');
@@ -556,12 +561,18 @@
     if (result?.ok === false) addLog(result.error, 'error');
   });
   for (const card of document.querySelectorAll('[data-component]')) {
-    const id = card.dataset.component;
+    const choice = card.querySelector('.component-choice');
+    choice?.addEventListener('change', () => {
+      card.dataset.component = choice.value;
+      render();
+    });
     card.querySelector('.component-source').addEventListener('click', async () => {
+      const id = card.dataset.component;
       const result = await api?.openComponentSource?.(id);
       if (result?.ok === false) addLog(result.error, 'error');
     });
     card.querySelector('.component-download').addEventListener('click', async () => {
+      const id = card.dataset.component;
       if (currentState?.components?.[id]?.phase === 'downloading') {
         const result = await api.cancelComponentDownload(id);
         if (result?.ok === false) addLog(result.error, 'error');
@@ -574,6 +585,7 @@
       } catch (cause) { addLog(cause?.key ? cause : i18n.serializeError(cause), 'error'); }
     });
     card.querySelector('.component-load').addEventListener('click', async () => {
+      const id = card.dataset.component;
       const previousTaskId = currentState?.remoteTask?.id;
       await runRemoteAction(`load:${id}`, () => api.loadComponent(id));
       if (id === 'pkgManager' && currentState?.remoteTask?.id !== previousTaskId &&
@@ -581,12 +593,12 @@
         card.querySelector('.component-notice').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
     card.querySelector('.component-reload')?.addEventListener('click', () =>
-      runRemoteAction(`reload:${id}`, () => api.loadComponent(id,
+      runRemoteAction(`reload:${card.dataset.component}`, () => api.loadComponent(card.dataset.component,
         { reload: true, expectedTaskId: currentState?.remoteTask?.id })));
     card.querySelector('.component-check')?.addEventListener('click', () =>
-      runRemoteAction(`check:${id}`, () => api.checkComponent(id)));
+      runRemoteAction(`check:${card.dataset.component}`, () => api.checkComponent(card.dataset.component)));
     card.querySelector('.component-open')?.addEventListener('click', () =>
-      runRemoteAction(`open:${id}`, () => api.openComponentUi(id)));
+      runRemoteAction(`open:${card.dataset.component}`, () => api.openComponentUi(card.dataset.component)));
   }
   elements.pkgSelect.addEventListener('click', () => runRemoteAction('select', () => api.selectPkg()));
   $('#game-folder').addEventListener('click', () => runRemoteAction('selectGame', () => api.selectGame('folder')));

@@ -55,7 +55,7 @@ macOS 也提供 ZIP。**Source code 是源码，请选择上表中的应用包�
 如果使用的是完整游戏目录或 `.exfat` / `.ffpkg` 镜像，第 6 步改用“发送游戏目录 / 镜像”：
 
 1. 在 PS5 启动支持匿名登录的 FTP Server，默认端口 `2121`，发送文件到 `/data/homebrew/`；已有同名目标会被拒绝。
-2. 在“安装插件”下载 **ShadowMountPlus 1.7beta2**，点击“加载到 PS5”，到主机确认启动。它需要与固件匹配的 Kstuff 运行环境；当前 Kstuff FPKG 测试版组合未经实机验证。
+2. 先在 PS5 完全关闭游戏。在“安装插件”选择 **ShadowMountPlus 1.7beta2（默认）**或 **1.7beta3（可选预发布）**，点击“下载” → “加载到 PS5”，到主机确认启动。它需要与固件匹配的 Kstuff 运行环境；当前 Kstuff FPKG 测试版组合未经实机验证。两个版本独立缓存，可选择 beta2 再次加载；beta3 未确认能解决启动黑屏。
 3. 在 PS5 检查 ShadowMountPlus 的扫描和游戏注册通知，再尝试启动。已上传的 `PPSA22999.exfat` 无需仅为加载插件重新上传。
 
 镜像通过加载器扫描、注册和挂载，`.pkg` 则通过 PKG Manager 安装。[ShadowMountPlus 使用与排查](guides/usage.zh-CN.md#shadowmountplus-镜像加载) · [目录与镜像传输说明](guides/usage.zh-CN.md#游戏目录与镜像的-ftp-发送)

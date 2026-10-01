@@ -39,9 +39,11 @@
 3. Payload Manager v0.5.2 的“检查状态”和“打开管理页面”无需先下载 ELF；应用通过固定端口 8084 检查版本与服务响应，确认后才打开官方页面。加载时若已运行则不重复发送；发送后最多等待 30 秒确认，超时只报告“已发送，启动未确认”。Payload Manager 可能执行主机已有自动加载列表，本应用不会修改该列表。
 4. 在“安装本地 PKG”区选择或拖入电脑上的单个 `.pkg`，点击“安装到 PS5”。应用通过 PKG Manager Direct Install 分段传输，无需 SMB 共享，也不依赖 9021。保持电脑和源文件可用，直到 PS5 返回安装结果。
 
-在 7.00–13.60 固件上，WebKit Autoloader 默认 ELF Loader 可能仅接受 PS5 本机连接。若需从电脑发送 ELF，请先按[上游说明](https://github.com/itsPLK/ps5-webkit-autoloader/blob/v0.5.1/README.md)启用局域网连接。Payload Manager 与 PKG Manager 是不同程序。
+在 7.00–13.60 固件上，WebKit Autoloader 默认 ELF Loader 可能仅接受 PS5 本机连接。若需从电脑发送 ELF，请先按[上游说明](https://github.com/itsPLK/ps5-webkit-autoloader/blob/v0.5.2/README.md)启用局域网连接。Payload Manager 与 PKG Manager 是不同程序。
 
-固定版本：WebKit Autoloader v0.5.1、PKG Manager v1.4.1、Kstuff FPKG 1.13-fpkg-dr-test5、Payload Manager v0.5.2、ShadowMountPlus 1.7beta2、FTP Server（drakmor）1.16-ng-stable、PS5 Web File Manager v1.9。缓存的旧版 Autoloader ELF 需重新下载才能通过新版校验。Autoloader v0.5.1 的 Relapse 需要有效的 Wi-Fi 或以太网连接，即使没有互联网也需要。
+固定版本：WebKit Autoloader v0.5.2、PKG Manager v1.4.1、Kstuff FPKG 1.13-fpkg-dr-test5、Payload Manager v0.5.2、ShadowMountPlus 1.7beta2（默认）/ 1.7beta3（可选预发布）、FTP Server（drakmor）1.16-ng-stable、PS5 Web File Manager v1.9。缓存的旧版 Autoloader ELF 需重新下载才能通过新版校验。Autoloader v0.5.2 的 Relapse 需要有效的 Wi-Fi 或以太网连接，即使没有互联网也需要。
+
+[Autoloader v0.5.2](https://github.com/itsPLK/ps5-webkit-autoloader/releases/tag/v0.5.2) 移除了启动遮罩，打开入口即可看到加载及注入日志；上游还简化了固件检测，并为 9.05 / 11.40 自动选择 Poops。应用只在用户点击“下载”时获取新版，既有 PS5 安装不会自动升级；下载后按上游说明加载安装器，并在主机确认结果。新版 ELF 的大小及 SHA-256 已与 GitHub 附件元数据核对，固件兼容性仍以实机结果为准。
 
 发送 FTP Server 后，在主机上确认启动，再用 FTP 客户端连接 PS5 地址的 2121 端口。发送 Web File Manager 后，在浏览器打开 `http://<PS5-IP>:<通知中的端口>/`；默认 8888，端口占用时尝试更高端口，以启动通知为准。这两个组件只报告发送结果，本项目尚未验证其在 13.40 上的运行。解压功能需要另行获取上游 `wfm-7zip-helper.elf`；本应用不下载或安装此 helper。
 
@@ -51,8 +53,12 @@ Kstuff 改为用户指定的 [GBAtemp test5 附件](https://gbatemp.net/attachme
 
 本应用支持用户主动下载、校验并推送 [ShadowMountPlus 1.7beta2](https://github.com/drakmor/ShadowMountPlus/releases/tag/1.7beta2) 的 `shadowmountplus.elf`；不将该 ELF 附带在构建包中。固定大小和 SHA-256 已与 GitHub 发布附件核对。上游说明列出 Kstuff-lite v1.07+ 作为运行环境，1.7 系列声明支持至 13.60；本项目尚未验证具体固件、游戏或当前 Kstuff FPKG 测试版的组合。
 
+版本选择默认保留 **1.7beta2**，也可选择 [1.7beta3（预发布）](https://github.com/drakmor/ShadowMountPlus/releases/tag/1.7beta3)。beta3 的大小及 SHA-256 已与 GitHub 附件元数据核对；上游更新包括自定义扫描路径下的 backports 挂载修复、ffpfsc 挂载参数调整，以及禁用 API 时不再自动创建图标。该更新未确认能解决游戏启动黑屏，beta3 的游戏运行尚未实机验证。
+
+试用方法：先在 PS5 完全关闭游戏，在 ShadowMountPlus 卡片的“版本”选择 beta3 → “下载” → “加载到 PS5”，然后检查主机启动通知与日志。两个版本独立缓存和校验，选择版本本身不会下载或发送文件。需要切回时选择 beta2，已缓存并通过校验则可直接再次加载；否则先下载。切换只更换所发送的 ELF，不恢复 PS5 上的配置或数据；无需仅为换插件重复上传游戏。
+
 1. 在 PS5 准备允许电脑连接的 ELF Loader 和兼容的 Kstuff 环境。
-2. 在“安装插件”点击 ShadowMountPlus 的“下载” → “加载到 PS5”，检查主机的 ShadowMount+ 启动通知。本应用显示“ELF 已发送”只确认传输；未通过 API 确认服务运行或扫描结果。
+2. 先完全关闭游戏，在“安装插件”选择 ShadowMountPlus 版本，再点击“下载” → “加载到 PS5”，检查主机的 ShadowMount+ 启动通知。本应用显示“ELF 已发送”只确认传输；未通过 API 确认服务运行或扫描结果。
 3. 已发送镜像应位于 `/data/homebrew/<文件名>`，例如 `/data/homebrew/PPSA22999.exfat`。ShadowMountPlus 默认扫描 `/data/homebrew`；若 `/data/shadowmount/config.ini` 设置了 `scanpath`，仅使用自定义扫描根，需包含该目录。
 4. 镜像内部的 `sce_sys/param.json` 和游戏文件应位于镜像根目录，不要额外套一层目录。等待扫描与游戏注册通知，再在 PS5 尝试启动。默认按需在游戏启动时挂载镜像；上传完成不会自动证明已注册或可运行。
 5. 无启动通知时先检查 ELF Loader；无游戏入口或无法启动时，查看 `/data/shadowmount/debug.log` 与主机通知，再检查扫描目录、镜像结构、完整性及运行环境。不要仅为加载插件重复上传已有镜像。

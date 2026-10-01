@@ -2,11 +2,11 @@
 
 const CATALOG = Object.freeze({
   autoloader: Object.freeze({
-    id: 'autoloader', name: 'WebKit Autoloader', version: 'v0.5.1', verification: 'sent',
+    id: 'autoloader', name: 'WebKit Autoloader', version: 'v0.5.2', verification: 'sent',
     source: 'https://github.com/itsPLK/ps5-webkit-autoloader',
-    release: 'https://github.com/itsPLK/ps5-webkit-autoloader/releases/tag/v0.5.1',
-    asset: 'webkit-autoloader-installer_v0.5.1.elf', size: 2311424,
-    sha256: '80083f76383944e1f87c2d4126e4e067cd70bd8013feb538575bc2cb08258a78',
+    release: 'https://github.com/itsPLK/ps5-webkit-autoloader/releases/tag/v0.5.2',
+    asset: 'webkit-autoloader-installer_v0.5.2.elf', size: 2311424,
+    sha256: 'f990e48e8330231d2066a7b8ab6dc25fda83b2cc36cb426c472b35b33767451a',
     license: 'GPL-3.0',
   }),
   pkgManager: Object.freeze({
@@ -41,6 +41,14 @@ const CATALOG = Object.freeze({
     asset: 'shadowmountplus.elf', size: 2437704,
     sha256: '3f716a7b2220c7e87e87452ae05cad689ef842d3beb4cdad6c526cb6dfc2b6b5',
     license: 'GPL-3.0',
+  }),
+  shadowMountPlusBeta3: Object.freeze({
+    id: 'shadowMountPlusBeta3', name: 'ShadowMountPlus 1.7beta3', version: '1.7beta3', verification: 'sent',
+    source: 'https://github.com/drakmor/ShadowMountPlus',
+    release: 'https://github.com/drakmor/ShadowMountPlus/releases/tag/1.7beta3',
+    asset: 'shadowmountplus.elf', size: 2437848,
+    sha256: '2a7427e20ba7a70bd8cd01e47eb00ee7ca82db82dff3da7884f48f9c3fcbe95a',
+    license: 'GPL-3.0', prerelease: true,
   }),
   ftpServer: Object.freeze({
     id: 'ftpServer', name: 'FTP Server (drakmor)', version: '1.16-ng-stable', verification: 'sent',
