@@ -28,6 +28,7 @@ if (helperIndex >= 0) {
   });
 } else {
   const DEFAULT_DOMAIN = 'manuals.playstation.net';
+  const DEFAULT_SOURCE_URL = 'https://github.com/ntfargo/Relapse-Exploit';
   const diagnostic = process.argv.includes('--diagnostic-ports');
   const ports = diagnostic ? { dns: 5354, https: 8443, http: 18000 } : { dns: 53, https: 443, http: 8000 };
   let window;
@@ -46,7 +47,7 @@ if (helperIndex >= 0) {
   const componentAborts = new Map();
   let configData = null;
   let state = {
-    interfaces: [], selectedIp: '', sourceUrl: '', entryPath: 'index.html', targetDomain: DEFAULT_DOMAIN,
+    interfaces: [], selectedIp: '', sourceUrl: DEFAULT_SOURCE_URL, entryPath: 'index.html', targetDomain: DEFAULT_DOMAIN,
     download: { phase: 'waiting', progress: null, meta: null, error: null },
     service: { dns: 'stopped', https: 'stopped', http: 'stopped', ps5Access: false, error: null, elevated: false },
     ports, diagnostic, language: 'system', locale: 'en', urls: { https: '', http: '' }, logs: [],
@@ -112,11 +113,11 @@ if (helperIndex >= 0) {
     contentDir = path.join(dataDir, 'content', 'current');
     certDir = path.join(dataDir, 'certificates');
     componentDir = path.join(dataDir, 'components');
-    configData = { selectedIp: '', sourceUrl: '', entryPath: 'index.html', targetDomain: DEFAULT_DOMAIN,
+    configData = { selectedIp: '', sourceUrl: DEFAULT_SOURCE_URL, entryPath: 'index.html', targetDomain: DEFAULT_DOMAIN,
       language: 'system', ps5Target: { ...DEFAULT_TARGET }, downloadRoute: 'direct' };
     try {
       const old = JSON.parse(await fsp.readFile(configPath, 'utf8'));
-      if (typeof old.sourceUrl === 'string') state.sourceUrl = old.sourceUrl;
+      if (typeof old.sourceUrl === 'string' && old.sourceUrl.trim()) state.sourceUrl = old.sourceUrl;
       if (typeof old.entryPath === 'string') state.entryPath = validateEntryPath(old.entryPath);
       if (validDomain(old.targetDomain)) state.targetDomain = old.targetDomain;
       if (typeof old.selectedIp === 'string') state.selectedIp = old.selectedIp;

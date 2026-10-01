@@ -46,7 +46,7 @@
 
       <section class="card source-card" aria-labelledby="source-title">
         <div class="section-head">
-          <div><h2 id="source-title" data-i18n="source.title">文件来源</h2><p data-i18n="source.description">提供 GitHub 仓库或 ZIP 地址，选择网页入口文件。</p></div>
+          <div><h2 id="source-title" data-i18n="source.title">文件来源</h2><p data-i18n="source.description">默认预填 Relapse 仓库，可改为其他 GitHub 仓库或 ZIP 地址；下载前请确认固件兼容性。</p></div>
         </div>
         <div class="download-route-control">
           <button id="download-route" class="route-switch" type="button" role="switch" aria-checked="false" aria-describedby="download-route-help" disabled><span class="switch-track" aria-hidden="true"></span><span data-i18n="downloadRoute.label">GitHub 镜像加速</span></button>
@@ -57,7 +57,7 @@
         <div class="source-fields">
           <div class="field source-url-field">
             <label for="source-url" data-i18n="source.urlLabel">GitHub 仓库或 ZIP 下载地址</label>
-            <input id="source-url" type="url" autocomplete="url" spellcheck="false" placeholder="https://github.com/owner/repository">
+            <input id="source-url" type="url" autocomplete="url" spellcheck="false" placeholder="https://github.com/ntfargo/Relapse-Exploit">
           </div>
           <div class="field path-field">
             <label for="entry-path" data-i18n="source.entryLabel">网页入口文件</label>
@@ -65,7 +65,7 @@
           </div>
         </div>
         <div class="source-actions">
-          <p class="field-message" id="source-message" role="status" aria-live="polite" data-i18n="source.waiting">等待下载。请填写文件来源。</p>
+          <p class="field-message" id="source-message" role="status" aria-live="polite" data-i18n="source.waiting">确认来源与入口文件后，点击“下载并检查”。</p>
           <button id="download-source" class="secondary-button" type="button" disabled data-i18n="source.download">下载并检查</button>
         </div>
         <div id="download-progress" class="progress-wrap" hidden>
