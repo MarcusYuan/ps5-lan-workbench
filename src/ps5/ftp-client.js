@@ -92,6 +92,14 @@ class FtpClient {
   }
 
   async store(remote, createStream) {
+    return this.transfer(remote, createStream, false);
+  }
+
+  async retrieve(remote, createStream) {
+    return this.transfer(remote, createStream, true);
+  }
+
+  async transfer(remote, createStream, reading) {
     let reply = await this.command('EPSV');
     let port;
     if (reply.code === 229) {
@@ -112,9 +120,9 @@ class FtpClient {
     data.setTimeout(30000, () => data.destroy(fail('FTP_TIMEOUT', 'FTP data timed out')));
     try {
       await new Promise((resolve, reject) => { data.once('connect', resolve); data.once('error', reject); });
-      this.expect(await this.command(`STOR ${remote}`), [125, 150]);
+      this.expect(await this.command(`${reading ? 'RETR' : 'STOR'} ${remote}`), [125, 150]);
       stream = createStream();
-      await pipeline(stream, data, { signal: this.signal });
+      await pipeline(...(reading ? [data, stream] : [stream, data]), { signal: this.signal });
       this.expect(await this.next(), [226, 250]);
     } finally { data.destroy(); this.data = null; stream?.destroy(); }
   }

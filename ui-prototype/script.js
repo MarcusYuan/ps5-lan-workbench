@@ -396,7 +396,7 @@
     const targetEdited = [elements.ps5Ip, elements.elfPort, elements.managerPort]
       .some(input => locallyEdited.has(input));
     const task = state.remoteTask;
-    const active = task && ['checking', 'sending', 'verifying', 'uploading', 'installing'].includes(task.phase);
+    const active = task && ['checking', 'sending', 'verifying', 'uploading', 'installing', 'y2jbUploading', 'y2jbVerifying', 'y2jbPublishing'].includes(task.phase);
     elements.saveTarget.disabled = savingTarget || Boolean(active);
     for (const input of [elements.ps5Ip, elements.elfPort, elements.managerPort]) input.disabled = Boolean(active);
     elements.targetMessage.textContent = targetFeedback ? asText(targetFeedback) : t('target.help');
@@ -446,10 +446,21 @@
       card.querySelector('progress').value = entry.progress || 0;
       const downloadButton = card.querySelector('.component-download');
       downloadButton.textContent = t(downloading ? 'components.cancelDownload' : 'components.download');
-      downloadButton.disabled = remoteAction === `download:${id}`;
+      downloadButton.disabled = remoteAction === `download:${id}` || (Boolean(active) && task?.label === id);
       const loadButton = card.querySelector('.component-load');
       loadButton.disabled = Boolean(active) || targetEdited || entry.phase !== 'ready' || !target.address;
       loadButton.textContent = t('components.load');
+      if (card.dataset.installer === 'y2jb') {
+        const port = Number($('#y2jb-port').value);
+        loadButton.textContent = t('y2jb.install');
+        loadButton.disabled ||= Boolean(remoteAction) || !$('#y2jb-prepared').checked ||
+          !Number.isInteger(port) || port < 1 || port > 65535;
+        for (const input of card.querySelectorAll('input, select')) input.disabled = Boolean(active) || Boolean(remoteAction) || downloading;
+        $('#y2jb-compatibility').textContent = t(id === 'y2jbDev' ? 'y2jb.devHelp' : 'y2jb.stableHelp');
+        const result = $('#y2jb-result');
+        result.hidden = task?.type !== 'y2jb' || task.target?.address !== target.address;
+        result.textContent = result.hidden ? '' : `${task.target.address} · ${task.label === 'y2jbDev' ? 'v1.0.0-dev-794049f' : 'v0.9.1'} · ${task.destination || ''} · ${t(`remote.${task.phase}`, { progress: Math.round(task.transferProgress ?? 0) })}${task.error ? ` ${asText(task.error)}` : ''}${task.backupPath ? ` ${t('y2jb.backup', { path: task.backupPath })}` : ''}${task.recoveryPath ? ` ${t('y2jb.recovery', { path: task.recoveryPath })}` : ''}`;
+      }
       const runtime = card.querySelector('.component-runtime');
       if (runtime) {
         const status = state.componentRuntime?.[id] || {};
@@ -542,7 +553,7 @@
   elements.entryPath.addEventListener('input', () => { locallyEdited.add(elements.entryPath); render(); });
   elements.targetDomain.addEventListener('input', () => locallyEdited.add(elements.targetDomain));
   for (const input of [elements.ps5Ip, elements.elfPort, elements.managerPort])
-    input.addEventListener('input', () => { locallyEdited.add(input); targetFeedback = null; render(); });
+    input.addEventListener('input', () => { locallyEdited.add(input); targetFeedback = null; $('#y2jb-prepared').checked = false; render(); });
   elements.saveTarget.addEventListener('click', async () => {
     if (!api?.setPs5Target || savingTarget) return;
     savingTarget = true; render();
@@ -564,6 +575,7 @@
     const choice = card.querySelector('.component-choice');
     choice?.addEventListener('change', () => {
       card.dataset.component = choice.value;
+      if (card.dataset.installer === 'y2jb') $('#y2jb-prepared').checked = false;
       render();
     });
     card.querySelector('.component-source').addEventListener('click', async () => {
@@ -586,6 +598,13 @@
     });
     card.querySelector('.component-load').addEventListener('click', async () => {
       const id = card.dataset.component;
+      if (card.dataset.installer === 'y2jb') {
+        await runRemoteAction(`install:${id}`, () => api.installY2jb(id, {
+          titleId: $('#y2jb-title').value, port: Number($('#y2jb-port').value), prepared: $('#y2jb-prepared').checked,
+        }));
+        $('#y2jb-prepared').checked = false; render();
+        return;
+      }
       const previousTaskId = currentState?.remoteTask?.id;
       await runRemoteAction(`load:${id}`, () => api.loadComponent(id));
       if (id === 'pkgManager' && currentState?.remoteTask?.id !== previousTaskId &&
@@ -601,6 +620,10 @@
       runRemoteAction(`open:${card.dataset.component}`, () => api.openComponentUi(card.dataset.component)));
   }
   elements.pkgSelect.addEventListener('click', () => runRemoteAction('select', () => api.selectPkg()));
+  for (const id of ['y2jb-title', 'y2jb-port', 'y2jb-prepared']) $('#'+id).addEventListener('change', () => {
+    if (id !== 'y2jb-prepared') $('#y2jb-prepared').checked = false;
+    render();
+  });
   $('#game-folder').addEventListener('click', () => runRemoteAction('selectGame', () => api.selectGame('folder')));
   $('#game-image').addEventListener('click', () => runRemoteAction('selectGame', () => api.selectGame('image')));
   $('#game-port').addEventListener('input', render);

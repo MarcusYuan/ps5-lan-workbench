@@ -60,6 +60,12 @@ For a complete game folder or an `.exfat` / `.ffpkg` image, replace step 6 with 
 
 Images are scanned, registered and mounted by the loader; `.pkg` files are installed through PKG Manager. [ShadowMountPlus usage and troubleshooting](guides/usage.en.md#shadowmountplus-image-loading) · [Folder and image transfers](guides/usage.en.md#ftp-transfer-of-game-folders-and-images)
 
+## Launch from YouTube on PS5 later
+
+After the initial jailbreak through another entry point, prepare the YouTube app, account and update blocking required upstream, and start FTP. Under “Install components → Entry and payload management → Y2JB Autoloader,” choose a version and the installed YouTube title ID, download it, fully close YouTube, confirm preparation, then select “Install through FTP.” The app verifies the uploaded file and backs up the previous download data.
+
+After later PS5 restarts, open YouTube to run the exploit and configured payloads without the desktop app; this is not a permanent jailbreak. Without `autoload.txt`, Payload Manager starts, where you still need to configure the payloads to autoload. The latest Relapse build is a pre-release and hardware compatibility is unverified. [Requirements, versions and recovery](guides/usage.en.md#y2jb-autoloader-installation)
+
 ## If something goes wrong
 
 | Problem | Check first |

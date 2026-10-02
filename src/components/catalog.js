@@ -1,6 +1,22 @@
 'use strict';
 
 const CATALOG = Object.freeze({
+  y2jb: Object.freeze({
+    id: 'y2jb', name: 'Y2JB Autoloader', version: 'v0.9.1', format: 'dat', verification: 'ftp',
+    source: 'https://github.com/itsPLK/ps5-y2jb-autoloader',
+    release: 'https://github.com/itsPLK/ps5-y2jb-autoloader/releases/tag/v0.9.1-36381e4',
+    asset: 'download0.dat', size: 336789504,
+    sha256: '19c224c64d9967ecf2c1a2fe4ed6d19afab587adc15c08a3f88bd687149591a9',
+    license: 'GPL-3.0 / MIT',
+  }),
+  y2jbDev: Object.freeze({
+    id: 'y2jbDev', name: 'Y2JB Autoloader (Relapse)', version: 'v1.0.0-dev-794049f', format: 'dat', verification: 'ftp',
+    source: 'https://github.com/itsPLK/ps5-y2jb-autoloader',
+    release: 'https://github.com/itsPLK/ps5-y2jb-autoloader/releases/tag/v1.0.0-dev-794049f',
+    asset: 'download0.dat', size: 336789504,
+    sha256: '1c9a416a13d458f3825f29443ddd9eccefb54afddefaf9784a4a45815d8cf684',
+    license: 'GPL-3.0 / MIT', prerelease: true,
+  }),
   autoloader: Object.freeze({
     id: 'autoloader', name: 'WebKit Autoloader', version: 'v0.5.2', verification: 'sent',
     source: 'https://github.com/itsPLK/ps5-webkit-autoloader',

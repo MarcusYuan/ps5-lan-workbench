@@ -49,6 +49,22 @@ After sending FTP Server, confirm startup on the console and connect an FTP clie
 
 Kstuff now uses the user supplied [GBAtemp test5 attachment](https://gbatemp.net/attachments/kstuff-1-13-fpkg-dr-test5-elf-7z.593030/), extracted after download. Both the archive and ELF have pinned sizes and SHA-256 hashes computed from the downloaded files; these have not been compared with author published hashes. FPKG compatibility on firmware 13.40/13.60 is unverified. Download again to replace the old Lite 1.11 cache; the component ID stays compatible. GBAtemp downloads directly without the GitHub mirror.
 
+### Y2JB Autoloader installation
+
+This is an FTP installer for an already jailbroken PS5. It does not depend on port 9021; an anonymous FTP service with access to `/user/download` must be running (default port 2121). Prepare a compatible YouTube app, account and update blocking according to the [upstream setup instructions](https://github.com/itsPLK/ps5-y2jb-autoloader#setup-instructions). The app does not install YouTube PKGs, change accounts or system databases, or restore system backups.
+
+- Default choice: [v0.9.1 stable release](https://github.com/itsPLK/ps5-y2jb-autoloader/releases/tag/v0.9.1-36381e4). This predates Relapse; its release notes require another kernel exploit above 12.70. Newer YouTube userland support does not establish full jailbreak support.
+- Optional: [v1.0.0-dev-794049f](https://github.com/itsPLK/ps5-y2jb-autoloader/releases/tag/v1.0.0-dev-794049f). Relapse targets firmware 10.20–13.60 and is an early pre-release needing testing. Neither version has been hardware-tested by this project.
+- Both `download0.dat` assets are 336,789,504 bytes, downloaded only on request and cached separately. Pinned sizes and SHA-256 hashes match GitHub release asset metadata. Neither is bundled with the app.
+
+Save the PS5 address, then choose the version, installed YouTube title ID (PPSA01650 / PPSA01651 / PPSA01652) and FTP port. Fully close YouTube, confirm preparation and click “Install through FTP.” Downloading alone does not change the PS5.
+
+The installer uploads a uniquely named temporary file under `/user/download/<title ID>/`, then reads the entire upload back through FTP to verify SHA-256, adding about 321 MiB of return traffic. After verification, any existing `download0.dat` is renamed to `download0.dat.backup-<unique ID>` before the new file is activated. Keeping the backup and new file needs extra free space; the UI shows the backup path. Existing autoload settings and payloads are preserved.
+
+An upload or verification failure leaves the original in place and attempts staging cleanup. If replacement fails, the app reconnects and attempts to restore the backup only when the destination is missing and the backup exists. A lost replacement acknowledgement leaves the result unconfirmed and retains relevant files. Close YouTube and inspect the destination, backup and staging paths shown in the UI over FTP. If necessary, retain the current file before restoring the backup as `download0.dat`; do not repeatedly install while the result is unconfirmed. Cleanup or recovery may also fail if FTP disconnects, requiring manual inspection.
+
+“Files installed” confirms FTP deployment only. Open YouTube on PS5 to verify execution; the entry point must still run after each restart. Without `autoload.txt`, Payload Manager starts and can configure the desired payloads to autoload. Existing `autoload.txt` affects startup and USB configuration takes priority. To work without USB, place the configuration and payloads on internal storage as documented upstream. This installer does not automatically add other PC-cached components to autoload or guarantee compatibility between payloads.
+
 ### ShadowMountPlus image loading
 
 The app supports user-initiated download, verification and delivery of `shadowmountplus.elf` from [ShadowMountPlus 1.7beta2](https://github.com/drakmor/ShadowMountPlus/releases/tag/1.7beta2). The ELF is not bundled. Its pinned size and SHA-256 were checked against the GitHub release asset. Upstream lists Kstuff-lite v1.07+ as its runtime environment and declares support through firmware 13.60 for the 1.7 series. This project has not verified specific firmware, games or the current Kstuff FPKG test-version combination.

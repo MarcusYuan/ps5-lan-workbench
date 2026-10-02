@@ -200,14 +200,24 @@ main { width: min(1280px, 100%); padding: 18px 20px 30px; }
 .ad-slot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; min-height: 100px; margin-top: 10px; border: 1px dashed #c2d4f3; border-radius: 6px; color: #5172aa; background: #fbfdff; text-align: center; font-size: 12px; }
 .ad-slot strong { color: #24477f; }
 .ad-slot small { color: #8298bd; }
+.component-group + .component-group { margin-top: 18px; }
+.component-category { margin: 0 0 8px; color: #18346a; font-size: 15px; }
 .component-list { display: grid; gap: 9px; }
 .component-card { display: grid; grid-template-columns: minmax(180px, 2fr) 75px minmax(110px, 1fr) minmax(190px, auto); align-items: center; gap: 12px; padding: 12px; border: 1px solid #dce7fb; border-radius: 6px; }
-.component-info h3 { margin: 0 0 4px; color: #15295d; font-size: 14px; }
+.component-info h4 { margin: 0 0 4px; color: #15295d; font-size: 14px; }
 .component-info p { margin: 0 0 4px; color: #5872a5; font-size: 10px; }
+.component-info .component-annotation { margin-bottom: 5px; color: #274780; font-size: 12px; line-height: 1.6; }
 .component-info .link-button { padding: 0; font-size: 10px; }
 .component-version { color: #4a69a0; font-size: 11px; }
 .component-choice-label { display: block; margin: 7px 0 3px; color: #4a69a0; font-size: 11px; }
 .component-choice { width: auto; max-width: 100%; min-height: 32px; }
+.y2jb-fields { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+.y2jb-fields label { display: grid; gap: 5px; }
+.y2jb-fields input, .y2jb-fields select { max-width: 170px; min-height: 32px; }
+.y2jb-confirm { display: flex; align-items: flex-start; gap: 8px; margin: 10px 0; font-size: 12px; line-height: 1.6; }
+.y2jb-confirm input { flex: 0 0 auto; margin-top: 4px; }
+[data-installer="y2jb"] { align-items: start; }
+[data-installer="y2jb"] .component-version, #y2jb-result { overflow-wrap: anywhere; }
 .component-state { color: #4a69a0; font-size: 11px; }
 .component-state progress { margin: 5px 0 0; }
 .component-runtime { display: block; margin-top: 5px; }

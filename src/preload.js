@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('localHost', Object.freeze({
   downloadComponent: id => ipcRenderer.invoke('components:download', id),
   cancelComponentDownload: id => ipcRenderer.invoke('components:cancelDownload', id),
   loadComponent: (id, options) => ipcRenderer.invoke('components:load', id, options),
+  installY2jb: (id, options) => ipcRenderer.invoke('y2jb:install', id, options),
   checkComponent: id => ipcRenderer.invoke('components:check', id),
   openComponentUi: id => ipcRenderer.invoke('components:openUi', id),
   selectPkg: () => ipcRenderer.invoke('pkg:selectFile'),

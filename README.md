@@ -60,6 +60,12 @@ macOS 也提供 ZIP。**Source code 是源码，请选择上表中的应用包�
 
 镜像通过加载器扫描、注册和挂载，`.pkg` 则通过 PKG Manager 安装。[ShadowMountPlus 使用与排查](guides/usage.zh-CN.md#shadowmountplus-镜像加载) · [目录与镜像传输说明](guides/usage.zh-CN.md#游戏目录与镜像的-ftp-发送)
 
+## 以后从 PS5 的 YouTube 启动
+
+首次通过其他入口完成破解后，准备符合上游要求的 YouTube 应用、账号与更新阻止设置，并开启 FTP。在“安装插件 → 入口与插件管理 → Y2JB Autoloader”选择版本和已安装的 YouTube 应用 ID，下载后完全关闭 YouTube，确认准备完成，再点击“通过 FTP 安装”。软件会校验上传文件并备份原下载数据。
+
+以后重启 PS5，打开 YouTube 执行破解流程和配置好的自动加载插件，日常启动无需打开电脑端软件；这不是永久破解。没有 `autoload.txt` 时会启动 Payload Manager，需先配置你要自动加载的插件。最新 Relapse 版本为预发布，实机兼容性待验证。[安装前提、版本与恢复说明](guides/usage.zh-CN.md#y2jb-autoloader-安装)
+
 ## 遇到问题
 
 | 问题 | 先检查 |

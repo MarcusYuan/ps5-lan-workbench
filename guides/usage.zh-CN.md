@@ -49,6 +49,22 @@
 
 Kstuff 改为用户指定的 [GBAtemp test5 附件](https://gbatemp.net/attachments/kstuff-1-13-fpkg-dr-test5-elf-7z.593030/)，下载后自动解压。压缩包和 ELF 分别固定大小与 SHA-256；这些校验值来自本地下载核验，尚未与作者公布值核对。13.40/13.60 FPKG 兼容性未验证。旧 Lite 1.11 缓存需重新下载；组件 ID 保持兼容。GBAtemp 下载直连，不使用 GitHub 镜像。
 
+### Y2JB Autoloader 安装
+
+这是首次破解后的 FTP 安装功能，不依赖 9021；PS5 必须已有可访问 `/user/download` 的匿名 FTP 服务，默认端口 2121。按 [Y2JB Autoloader 上游说明](https://github.com/itsPLK/ps5-y2jb-autoloader#setup-instructions)准备兼容的 YouTube、账号及更新阻止设置。应用不会安装 YouTube PKG、修改账号、修改系统数据库或恢复系统备份。
+
+- 默认可选 [v0.9.1 正式版](https://github.com/itsPLK/ps5-y2jb-autoloader/releases/tag/v0.9.1-36381e4)：尚未集成 Relapse；其发布说明指出 12.70 以上仍需其他内核漏洞，不能把新版 YouTube 用户态支持理解为完整破解支持。
+- 可选 [v1.0.0-dev-794049f](https://github.com/itsPLK/ps5-y2jb-autoloader/releases/tag/v1.0.0-dev-794049f)：Relapse 目标固件为 10.20–13.60，属于需要测试的预发布版。两个版本均未由本项目实机验证。
+- 两个版本的 `download0.dat` 均为 336,789,504 字节，按需从上游下载并独立缓存。固定大小及 SHA-256 已核对 GitHub 发布附件元数据，不随应用打包。
+
+保存 PS5 地址，在组件卡片选择版本、实际安装的 YouTube 应用 ID（PPSA01650 / PPSA01651 / PPSA01652）及 FTP 端口。完全关闭 YouTube，确认准备完成后点击“通过 FTP 安装”。仅下载文件不会改变 PS5。
+
+安装时先向对应 `/user/download/<应用 ID>/` 上传随机命名的临时文件，再通过 FTP 回读完整文件核对 SHA-256，因此会额外传回约 321 MiB。校验通过后，将原 `download0.dat` 重命名为 `download0.dat.backup-<唯一标识>`，再启用新文件。保留备份与新文件需要额外可用空间；界面显示备份路径。已有自动加载配置和载荷不被改写。
+
+如上传或校验失败，原文件不替换，尝试清理临时文件。如果替换阶段失败，工具会重新连接，在目标缺失且备份存在时尝试恢复原文件。若连接中断导致替换结果无法确认，会保留相关文件并提示检查。先关闭 YouTube，用 FTP 检查界面给出的目标、备份及临时路径，必要时保留当前文件后将备份恢复为 `download0.dat`；勿在结果未确认时反复安装。清理或恢复也可能因 FTP 中断而失败，届时需手动检查。
+
+显示“文件已安装”仅表示 FTP 文件部署完成。请在 PS5 打开 YouTube 确认实际执行；后续每次重启仍需运行入口。在没有 `autoload.txt` 时会启动 Payload Manager，可在那里配置所需插件的自动加载。现有 `autoload.txt` 会影响启动行为，USB 配置优先；如需脱离 USB，按上游说明将配置和载荷放到主机内部存储。安装器不会自动把电脑已下载的其他插件配置成自动加载，也不能保证所有插件组合兼容。
+
 ### ShadowMountPlus 镜像加载
 
 本应用支持用户主动下载、校验并推送 [ShadowMountPlus 1.7beta2](https://github.com/drakmor/ShadowMountPlus/releases/tag/1.7beta2) 的 `shadowmountplus.elf`；不将该 ELF 附带在构建包中。固定大小和 SHA-256 已与 GitHub 发布附件核对。上游说明列出 Kstuff-lite v1.07+ 作为运行环境，1.7 系列声明支持至 13.60；本项目尚未验证具体固件、游戏或当前 Kstuff FPKG 测试版的组合。

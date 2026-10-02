@@ -38,7 +38,7 @@ function extractElf(archive, item, signal) {
   });
 }
 
-function cachePath(cacheDir, id) { return path.join(cacheDir, `${id}.elf`); }
+function cachePath(cacheDir, id) { return path.join(cacheDir, `${id}.${component(id).format || 'elf'}`); }
 
 async function inspect(cacheDir, id) {
   const item = component(id);
@@ -48,7 +48,7 @@ async function inspect(cacheDir, id) {
   const header = Buffer.alloc(4);
   const check = await fsp.open(file, 'r');
   try { await check.read(header, 0, 4, 0); } finally { await check.close(); }
-  if (!header.equals(Buffer.from([0x7f, 0x45, 0x4c, 0x46]))) return null;
+  if (item.format !== 'dat' && !header.equals(Buffer.from([0x7f, 0x45, 0x4c, 0x46]))) return null;
   const hash = crypto.createHash('sha256');
   for await (const chunk of fs.createReadStream(file)) hash.update(chunk);
   return hash.digest('hex') === item.sha256 ? { file, sha256: item.sha256, size: stat.size, version: item.version } : null;
@@ -56,6 +56,7 @@ async function inspect(cacheDir, id) {
 
 async function download(cacheDir, id, { signal, onProgress = () => {}, downloadRoute = 'direct', fetchImpl = globalThis.fetch } = {}) {
   const item = component(id);
+  if (item.format === 'dat') signal = signal ? AbortSignal.any([signal, AbortSignal.timeout(30 * 60 * 1000)]) : AbortSignal.timeout(30 * 60 * 1000);
   await fsp.mkdir(cacheDir, { recursive: true });
   const temporary = path.join(cacheDir, `${id}-${crypto.randomUUID()}.part`);
   const extracted = `${temporary}.elf`;
@@ -73,7 +74,7 @@ async function download(cacheDir, id, { signal, onProgress = () => {}, downloadR
     for await (const chunk of response.body) {
       if (signal?.aborted) throw Object.assign(new Error('Canceled'), { name: 'AbortError' });
       size += chunk.length;
-      if (size > MAX_COMPONENT_BYTES || size > expected.size) throw new Error('Component exceeds expected size');
+      if (size > (item.format === 'dat' ? 512 * 1024 * 1024 : MAX_COMPONENT_BYTES) || size > expected.size) throw new Error('Component exceeds expected size');
       hash.update(chunk);
       let offset = 0;
       while (offset < chunk.length) {
@@ -95,7 +96,7 @@ async function download(cacheDir, id, { signal, onProgress = () => {}, downloadR
     const header = Buffer.alloc(4);
     const check = await fsp.open(elfFile, 'r');
     try { await check.read(header, 0, 4, 0); } finally { await check.close(); }
-    if (!header.equals(Buffer.from([0x7f, 0x45, 0x4c, 0x46]))) throw new Error('Downloaded file is not ELF');
+    if (item.format !== 'dat' && !header.equals(Buffer.from([0x7f, 0x45, 0x4c, 0x46]))) throw new Error('Downloaded file is not ELF');
     if (signal?.aborted) throw Object.assign(new Error('Canceled'), { name: 'AbortError' });
     await fsp.rename(elfFile, cachePath(cacheDir, id));
     onProgress(100);

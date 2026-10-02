@@ -16,6 +16,7 @@ const payloadManager = require('./ps5/payload-manager-client');
 const pkgFiles = require('./pkg/file');
 const pkgInstall = require('./pkg/install-session');
 const games = require('./ps5/game-transfer');
+const y2jb = require('./ps5/y2jb-installer');
 const { downloadArchive, validateEntryPath, METADATA_FILENAME } = require('./core/downloader');
 const { getCertificate, validDomain } = require('./core/certificate');
 const { createController } = require('./service/controller');
@@ -291,6 +292,7 @@ if (helperIndex >= 0) {
   }
   async function downloadComponent(_event, id) {
     component(id);
+    if (remoteAbort && state.remoteTask?.label === id) throw error('REMOTE_BUSY', 'remote.busy');
     if (componentAborts.has(id)) throw error('DOWNLOAD_IN_PROGRESS', 'error.downloadInProgress');
     const abort = new AbortController();
     componentAborts.set(id, abort);
@@ -371,13 +373,14 @@ if (helperIndex >= 0) {
       emit();
     };
     remotePromise = Promise.resolve().then(() => operation(target, abort.signal, update)).then(result => {
-      const phase = ['alreadyRunning', 'alreadyRunningBusy'].includes(result?.status) ? result.status :
+      const phase = ['alreadyRunning', 'alreadyRunningBusy', 'y2jbInstalled'].includes(result?.status) ? result.status :
         result?.status === 'transferred' ? 'transferred' : result?.status === 'confirmed' ? 'confirmed' : 'sent';
       update({ phase, transferProgress: phase === 'alreadyRunning' || phase === 'alreadyRunningBusy' ? null : 100,
         installProgress: phase === 'confirmed' && type === 'pkg' ? 100 : null });
       return publicState();
     }).catch(cause => {
       update({ phase: cause?.code === 'TASK_CANCELED' ? 'canceled' :
+        cause?.code === 'Y2JB_RESTORED' ? 'failed' :
         cause?.code === 'RESULT_UNCONFIRMED' || abort.signal.aborted ? 'unconfirmed' : 'failed',
         error: i18n.serializeError(cause) });
       throw cause;
@@ -386,6 +389,7 @@ if (helperIndex >= 0) {
   }
   async function loadComponent(_event, id, options = {}) {
     const item = component(id);
+    if (item.verification === 'ftp') throw error('Y2JB_INSTALL_REQUIRED', 'y2jb.useInstaller');
     const reload = options?.reload === true;
     if (reload && (id !== 'pkgManager' || state.remoteTask?.id !== options.expectedTaskId ||
       state.remoteTask?.phase !== 'alreadyRunning' || remoteAbort))
@@ -424,6 +428,14 @@ if (helperIndex >= 0) {
         }
       }
       throw Object.assign(new Error('PKG Manager did not confirm readiness'), { code: 'RESULT_UNCONFIRMED' });
+    });
+  }
+  async function installY2jb(_event, id, options) {
+    if (!['y2jb', 'y2jbDev'].includes(id)) throw error('Y2JB_COMPONENT', 'y2jb.preparationError');
+    y2jb.validateOptions(options);
+    if (componentAborts.has(id)) throw error('DOWNLOAD_IN_PROGRESS', 'error.waitForDownload');
+    return startRemote('y2jb', id, async (target, signal, update) => {
+      return y2jb.install(componentFiles.cachePath(componentDir, id), component(id), target, options, { signal, onUpdate: update });
     });
   }
   async function registerPkg(filePath) {
@@ -483,6 +495,7 @@ if (helperIndex >= 0) {
     ipcMain.handle('components:download', handle(downloadComponent));
     ipcMain.handle('components:cancelDownload', handle((_event, id) => { component(id); componentAborts.get(id)?.abort(); return publicState(); }));
     ipcMain.handle('components:load', handle(loadComponent));
+    ipcMain.handle('y2jb:install', handle(installY2jb));
     ipcMain.handle('components:check', handle(checkComponent));
     ipcMain.handle('components:openUi', handle(openComponentUi));
     ipcMain.handle('pkg:selectFile', handle(pickPkg));

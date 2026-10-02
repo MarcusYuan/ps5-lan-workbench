@@ -70,6 +70,6 @@ test('beta3 failure preserves beta2 in its independent cache', async t => {
 test('every downloadable component is exposed by a card or version choice in the shipped interface', async () => {
   const html = await fs.readFile(path.join(__dirname, '../ui-prototype/index.html'), 'utf8');
   const cards = [...html.matchAll(/data-component="([^"]+)"/g)].map(match => match[1]);
-  const choices = [...html.matchAll(/<option[^>]*value="(shadowMountPlus[^"]*)"/g)].map(match => match[1]);
+  const choices = [...html.matchAll(/<option[^>]*value="([^"]+)"/g)].map(match => match[1]).filter(id => Object.hasOwn(CATALOG, id));
   assert.deepEqual([...new Set([...cards, ...choices])].sort(), Object.keys(CATALOG).sort());
 });
