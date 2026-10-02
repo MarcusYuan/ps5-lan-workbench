@@ -2,6 +2,20 @@
 
 [Back to README](../README.en.md) | [简体中文](usage.zh-CN.md)
 
+## Automatic IP configuration and cleanup
+
+“Connection mode and computer IP setup” offers single-adapter (shared router) and two-adapter (separate adapter wired to PS5) modes. Select a physical adapter and service IP, click “Configure IP automatically,” and complete system authorization. The default is `192.168.100.1/24`; another private IPv4 address ending in `.1` can be used. The mask is fixed at `255.255.255.0`, with `.2` suggested for PS5. Success selects the added address for local services. Enter the PS5 settings manually and save its address in the app.
+
+Single-adapter mode uses the connected internet adapter with an existing IPv4 address and default gateway, with the computer and PS5 on the same router. Disable AP/client isolation; guest networks and other policies may prevent communication. Two-adapter mode uses the adapter wired to PS5, without a default gateway. Set PS5 primary DNS and gateway to the computer's service IP for local connectivity only; this does not forward internet traffic. Existing computer addresses, DHCP, gateway and DNS are preserved.
+
+Stop local services, downloads, transfers and remote tasks before changes. The app checks actual adapters, addresses and overlapping subnets on other adapters and Windows routes. Windows duplicate-address detection is also checked. These checks cannot guarantee an unused address or unrestricted LAN access; hardware verification is still required. A pre-existing matching address is used without claiming ownership. If an adapter or route has an overlapping subnet, including a broader mask, choose a different private subnet and adjust PS5 settings accordingly.
+
+Windows uses temporary DHCP/static-address coexistence. If the adapter already has a usable address, the added address skips automatic source selection to preserve normal internet source selection. An otherwise unaddressed direct-connect adapter can use the added address for outbound connections. If coexistence cannot be verified, configuration stops. macOS uses a temporary IPv4 alias. Added addresses and app-modified coexistence settings last for the current boot only. Closing the app retains them; configure again after restarting the computer.
+
+“Clear app-added configuration” uses `network-config.json` in the app's user data directory to identify the adapter and address. It removes the app-added address and restores coexistence enabled by the app. It does not reset the adapter, restore an entire old network snapshot or delete pre-existing IPs. If another application has since added a static address requiring coexistence, the setting and cleanup record are retained with an explanation. After a reboot, old records are discarded without deleting current addresses.
+
+Interrupted operations, canceled authorization and failed recovery retain the record. On the next launch, inspect the message and clear the app-added configuration before retrying. Changes to existing internet settings or unconfirmed results are not reported as success; check system network settings. Do not manually delete the record and repeatedly configure. Validation includes simulated commands and failure scenarios for both platforms, plus actual address addition and cleanup on Ethernet and Wi-Fi on one Windows computer. Tests used the application configuration module and helper process, verified local TCP communication through the added address and public HTTPS requests, and confirmed restoration of original IP, DHCP, gateway, DNS and coexistence settings after cleanup. An initially unaddressed direct-connect adapter, macOS hardware operation, expiration after reboot and PS5-side connectivity remain unverified.
+
 ## Direct computer-to-PS5 network setup
 
 Follow the [seven steps in the README](../README.en.md#seven-steps-from-setup-to-playing). Use the computer's Wi-Fi interface to download resources over your usual network, and connect its Ethernet interface directly to the PS5 with a cable. No router is needed between them.
@@ -23,7 +37,7 @@ Initial app, repository, and component downloads require internet access on the 
 
 ## Host a web page locally
 
-1. Configure the direct connection using the table above. Select the computer Ethernet IPv4 interface at `192.168.100.1` in the app.
+1. Configure either connection mode as described above. Select the computer's service IP in the app (default `192.168.100.1`).
 2. “File source” is prefilled with `https://github.com/ntfargo/Relapse-Exploit` on first launch or when the saved URL is empty. The default entry file is `index.html`; saved custom URLs and the source of downloaded content are retained. Check the selected repository's firmware compatibility; prefilling does not confirm PS5 hardware compatibility. You can use another public GitHub repository root URL or direct HTTPS ZIP URL and set the relative entry path inside the archive. A Release page URL is not a direct ZIP URL. Prefilling does not trigger a download.
 3. Click “Download and verify.” For a GitHub repository, the app resolves the default branch to an exact commit before downloading the archive. Files go into the app's user data directory. A failed or canceled download retains the previous usable files.
 4. Click “Start local services.” By default, the app listens on DNS UDP/TCP 53, HTTPS 443, and HTTP 8000. Grant any required system permission. An occupied port produces an error.
@@ -111,7 +125,7 @@ To check whether a page works offline, disconnect the computer from the internet
 | Symptom | Check |
 | --- | --- |
 | Services will not start | Check the selected interface, system permissions, and whether another DNS, proxy, or app occupies ports 53, 443, or 8000. |
-| The PS5 cannot open the page | Check the direct cable and the network table above, select Ethernet interface `192.168.100.1`, set PS5 primary DNS to that address, and check the HTTPS log. Certificate and page behavior still need hardware confirmation. |
+| The PS5 cannot open the page | Check the direct cable, or ensure the shared router permits communication between devices. Select the computer's service IP, set PS5 primary DNS to that address, and check the HTTPS log. Certificate and page behavior still need hardware confirmation. |
 | A download fails | Check the GitHub repository or direct HTTPS ZIP URL and the relative entry path. If using the mirror, turn it off and retry. |
 | ELF or PKG action fails | Check the saved PS5 IPv4 address, the relevant service on port 9021 or 8844, and the task log. |
 

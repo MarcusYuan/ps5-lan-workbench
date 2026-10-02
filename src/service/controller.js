@@ -29,7 +29,7 @@ function launch(executable, args, elevated) {
   throw new Error('Automatic system authorization is supported on macOS and Windows only.');
 }
 
-async function createController({ executable, appPath, packaged, config, elevated = false, onEvent = () => {} }) {
+async function createController({ executable, appPath, packaged, config, elevated = false, onEvent = () => {}, timeoutMs = 30000 }) {
   const token = crypto.randomBytes(32).toString('hex');
   const ticketDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'ps5-local-host-'));
   const ticketPath = path.join(ticketDir, 'ticket.json');
@@ -88,7 +88,7 @@ async function createController({ executable, appPath, packaged, config, elevate
           } else if (!authenticated) {
             peer.destroy(); return;
           } else if (message.type === 'ready') {
-            if (!settled) { settled = true; clearTimeout(timer); resolve({ stop: close, ports: message.ports, elevated }); }
+            if (!settled) { settled = true; clearTimeout(timer); resolve({ stop: close, ports: message.ports, result: message.result, elevated }); }
           } else if (message.type === 'error') {
             const details = message.error || message;
             const error = new Error(details.detail || details.message || 'Service startup failed.');
@@ -106,7 +106,7 @@ async function createController({ executable, appPath, packaged, config, elevate
       peer.on('error', error => { if (authenticated) fail(error); });
     });
     server.on('error', fail);
-    timer = setTimeout(() => fail(new Error('Service helper did not start within 30 seconds.')), 30000);
+    timer = setTimeout(() => fail(new Error('Authorized helper did not finish startup within the allowed time.')), timeoutMs);
   });
   try {
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });

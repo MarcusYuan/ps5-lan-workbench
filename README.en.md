@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-Connect your computer directly to your PS5 with an Ethernet cable to host local injection pages, manage and send components, and install local game files. The computer uses Wi-Fi to download resources and a separate Ethernet interface for the PS5. No router is needed between the computer and console.
+Host local injection pages, manage components and install authorized local game files from your computer. Connect the computer and PS5 to the same router with one network adapter, or use a separate Ethernet adapter for a direct cable connection.
 
 **[Download the latest version](https://github.com/MarcusYuan/ps5-lan-workbench/releases/latest)** · [Detailed guide](guides/usage.en.md) · [Contact and feedback](#contact-and-community)
 
@@ -23,27 +23,31 @@ ZIP packages are also available for macOS. **Source code contains the source fil
 
 ## Connection and IP settings
 
-Connect the computer's Wi-Fi interface to your usual Wi-Fi network. **Connect its Ethernet interface directly to the PS5 with a cable.** Configure the wired link manually:
+Choose a mode in “Connection mode and computer IP setup”:
 
-| Setting | Computer Ethernet interface | PS5 wired network |
+| Mode | Connection | Adapter to select |
 | --- | --- | --- |
-| IPv4 address | `192.168.100.1` | `192.168.100.2` |
-| Subnet mask | `255.255.255.0` | `255.255.255.0` |
-| Default gateway | Leave blank; Wi-Fi continues to provide internet access | `192.168.100.1` |
-| Primary DNS | Leave blank; keep existing Wi-Fi settings | `192.168.100.1` |
+| Single adapter | Computer and PS5 connect to the same router, including over Wi-Fi | The computer's current internet adapter |
+| Two adapters | One adapter provides internet access; another connects directly to PS5 by cable | The adapter connected to PS5 |
 
-In the app, select the **Ethernet interface at `192.168.100.1`** and save **`192.168.100.2` as the PS5 address**. The first hosts web pages; the second receives components and game files. Setting a gateway does not automatically enable internet sharing on the computer. Keep network bridging and internet sharing disabled for this setup.
+Click **Configure IP automatically** to add the default service address `192.168.100.1/24`. Existing IP, DHCP, gateway and DNS settings are preserved. If the address or subnet conflicts, choose another private address ending in `.1` and use the matching PS5 settings shown in the app. Automatic configuration supports Windows and macOS and may request system authorization.
 
-**Local use does not require internet access on the PS5.** The computer needs internet access to initially download the app, web repository, and components. Once downloaded, local hosting, cached component delivery, and local file installation use the cable. Any internet requirement of the web page or third-party component depends on the selected resource.
+Manually enter PS5 IP `192.168.100.2`, mask `255.255.255.0`, primary DNS `192.168.100.1` and gateway `192.168.100.1`, then save the same PS5 address in the app. These parameters provide local access; internet sharing and bridging are not enabled. The router must allow communication between clients. Local use does not require internet access on PS5.
+
+After stopping services and transfers, **Clear app-added configuration** removes the app-added address. Pre-existing addresses are not removed. Closing the app retains the temporary address; restarting the computer expires it, so configure it again afterward. [Configuration, recovery and limitations](guides/usage.en.md#automatic-ip-configuration-and-cleanup)
+
+The computer needs internet access for initial downloads. Cached resources and local files can then be used over the local network; third-party resources may have their own internet dependencies. Automatic configuration has been tested on one Windows computer for actual address addition and cleanup on Ethernet and Wi-Fi while preserving existing internet settings. macOS hardware operation and PS5 connectivity remain unverified.
 
 ## Seven steps from setup to playing
+
+The diagram below illustrates the two-adapter direct connection. For single-adapter mode, use the shared-router setup above.
 
 ![Direct computer-to-PS5 network setup and seven-step workflow](guides/assets/direct-connect-flow.en.png)
 
 | Step | What to do | Why |
 | --- | --- | --- |
 | 1. Download and launch | Get the app using the download link above. On Windows, right-click and select “Run as administrator.” On macOS, grant permissions when starting services. | Local DNS and web services need the relevant ports and system permissions. |
-| 2. Configure the network and disable automatic updates | Apply the wired IP settings above, select the Ethernet interface in the app, and save the PS5 address. Disable automatic system software downloads and installation in the PS5 settings. | Fixed addresses allow direct communication; disabling automatic updates avoids firmware changes that may affect resource compatibility. |
+| 2. Configure the network and disable automatic updates | undefined Disable automatic system software downloads and installation in the PS5 settings. | Fixed addresses allow direct communication; disabling automatic updates avoids firmware changes that may affect resource compatibility. |
 | 3. Download the web repository and start services | “File source” defaults to the [Relapse repository](https://github.com/ntfargo/Relapse-Exploit), with `index.html` as the entry file. Check firmware compatibility, then click “Download and verify” → “Start local services.” You can use another authorized repository or direct HTTPS ZIP URL. Saved sources are retained. | The prefilled URL saves finding and copying the address; downloaded resources let the computer provide local web and DNS services to PS5. |
 | 4. Open the PS5 User's Guide for injection | Go to Settings → Guide & Tips, Health & Safety, and Other Information → User's Guide. Follow the selected page's instructions and confirm the injection result on the console. Menu names can vary with language or firmware. | Primary DNS directs the relevant User's Guide domain to the computer. Injection behavior and firmware compatibility depend on the selected repository. |
 | 5. Manage and send components from the computer | Confirm the PS5 ELF Loader accepts computer connections. Under “Install components,” download the components you need, click “Load on PS5,” and confirm startup on the console. Cached components can be sent again. | The receiver available after injection accepts components; the required management service must run before game installation. |
@@ -70,10 +74,10 @@ After later PS5 restarts, open YouTube to run the exploit and configured payload
 
 | Problem | Check first |
 | --- | --- |
-| Which IP address should I use? | Select the computer Ethernet interface at `192.168.100.1`; save `192.168.100.2` as the PS5 address. |
+| Which IP address should I use? | Choose the mode and adapter. The default added computer service IP is `192.168.100.1`; save `192.168.100.2` as the PS5 address. If you change the subnet, follow the updated values shown in the app. |
 | A download fails | Use a repository URL or direct ZIP URL. For slow GitHub downloads, try “GitHub mirror acceleration”; turn it off if it fails. It uses a third-party service. |
 | Local services will not start | Read the app's error message and check system permissions and occupied ports. |
-| PS5 cannot open the page | Check the direct Ethernet cable, both IP addresses and subnet masks, PS5 primary DNS `192.168.100.1`, and whether services are running on the Ethernet interface. |
+| PS5 cannot open the page | Check the direct cable or whether the shared router permits communication between devices. Verify both IP addresses and masks, point PS5 primary DNS to the computer's service IP, and confirm local services are running. |
 | A component, PKG, or FTP connection fails | Check the PS5 address and confirm the required Loader, PKG Manager, or FTP Server is running on the console. |
 | The result is unconfirmed | Check the actual result on the PS5 before repeating the operation. |
 

@@ -32,6 +32,22 @@
         </div>
       </div>
 
+      <section class="card network-card" aria-labelledby="network-title">
+        <h2 id="network-title" data-i18n="network.title">连接模式与电脑 IP 配置</h2>
+        <div class="network-fields">
+          <div class="field"><label for="network-mode" data-i18n="network.mode">连接模式</label><select id="network-mode"><option value="single" data-i18n="network.single">单网卡 · 同一路由器</option><option value="dual" selected data-i18n="network.dual">双网卡 · 网线直连 PS5</option></select></div>
+          <div class="field"><label for="network-adapter" data-i18n="network.adapter">添加服务 IP 的网卡</label><select id="network-adapter" disabled></select></div>
+          <div class="field"><label for="network-address" data-i18n="network.address">新增服务 IP（掩码 255.255.255.0）</label><input id="network-address" value="192.168.100.1" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <p id="network-mode-help" class="hint"></p>
+        <p id="network-original" class="hint"></p>
+        <div class="network-actions"><button id="network-apply" class="primary-button" type="button" disabled data-i18n="network.apply">自动配置 IP</button><button id="network-clear" class="secondary-button" type="button" disabled data-i18n="network.clear">清除本工具配置</button><button id="network-refresh" class="secondary-button" type="button" data-i18n="network.refresh">刷新网卡</button></div>
+        <p id="network-status" class="hint" role="status" aria-live="polite"></p>
+        <p id="network-error" class="field-message error" role="alert" hidden></p>
+        <p id="network-ps5" class="hint"></p>
+        <p class="hint" data-i18n="network.lifetime">保留原联网配置。新增地址在本次开机期间有效，退出软件后仍保留；重启电脑后需重新配置。PS5 参数请手动填写。</p>
+      </section>
+
       <section class="target-bar card" aria-label="设备设置" data-i18n-aria-label="target.title">
         <div class="field"><label for="interface" data-i18n="connection.interface">电脑网络接口</label><select id="interface" disabled><option value="" data-i18n="connection.loadingInterfaces">正在读取网络接口…</option></select></div>
         <div class="target-computer"><span data-i18n="target.computerIp">本机 IP</span> <strong id="computer-ip">—</strong></div>

@@ -51,6 +51,9 @@
   let savingTarget = false;
   let targetFeedback = null;
   let remoteAction = '';
+  let networkAction = false;
+  let networkFeedback = null;
+  const networkSelection = { mode: 'dual', adapterId: '', address: '192.168.100.1', initialized: false };
   const logs = [];
   const locallyEdited = new WeakSet();
   const maxLogs = 100;
@@ -245,6 +248,68 @@
     elements.interface.disabled = values.length === 0 || Boolean(busyAction) || hasRunningService(state.service);
   }
 
+  function renderNetwork(state) {
+    const network = state.network || {};
+    const adapters = (network.adapters || []).filter(a => a.hardware);
+    const managed = network.managed;
+    if (!networkSelection.initialized && (adapters.length || managed)) {
+      if (managed) Object.assign(networkSelection, { mode: managed.mode, adapterId: managed.adapterId, address: managed.address });
+      networkSelection.initialized = true;
+    }
+    const mode = $('#network-mode'); const select = $('#network-adapter'); const address = $('#network-address');
+    mode.value = networkSelection.mode;
+    if (document.activeElement !== address) address.value = networkSelection.address;
+    select.replaceChildren();
+    for (const adapter of adapters) {
+      const option = document.createElement('option'); option.value = adapter.id;
+      option.textContent = `${adapter.name} · ${adapter.addresses.map(a => a.address).join(', ') || t('network.noAddress')}`;
+      select.append(option);
+    }
+    // A physical adapter is explicitly selected by the user; never infer it from the first IPv4 address.
+    if (!adapters.some(a => a.id === networkSelection.adapterId)) {
+      const option = document.createElement('option'); option.value = ''; option.textContent = t('network.adapter');
+      select.prepend(option); select.value = '';
+    } else select.value = networkSelection.adapterId;
+    const adapter = adapters.find(a => a.id === select.value);
+    const activeTask = state.remoteTask && ['checking', 'sending', 'verifying', 'uploading', 'installing', 'y2jbUploading', 'y2jbVerifying', 'y2jbPublishing'].includes(state.remoteTask.phase);
+    const blocked = networkAction || network.busy || Boolean(busyAction) || Boolean(remoteAction) || hasRunningService(state.service) || activeTask ||
+      Object.values(state.components || {}).some(c => c.phase === 'downloading');
+    const expired = managed && managed.bootId !== network.bootId;
+    for (const input of [mode, select, address]) input.disabled = Boolean(blocked || (managed && !expired));
+    $('#network-apply').disabled = Boolean(blocked || !network.supported || !adapter || (managed && !expired));
+    $('#network-clear').disabled = Boolean(blocked || !managed);
+    $('#network-refresh').disabled = Boolean(networkAction || network.busy);
+    $('#network-mode-help').textContent = t(mode.value === 'single' ? 'network.singleHelp' : 'network.dualHelp');
+    $('#network-original').textContent = t('network.original', { addresses: adapter?.addresses.map(a => `${a.address}/${a.prefix}`).join(', ') || t('network.noAddress') });
+    let status = t('network.idle');
+    if (expired) status = t('network.expired');
+    else if (managed) status = managed.phase === 'pending' ? t('network.pending') :
+      t('network.managed', { address: managed.address, adapter: adapters.find(a => a.id === managed.adapterId)?.name || managed.adapterId });
+    else if (['existing', 'cleared', 'expired'].includes(network.status)) status = t(`network.${network.status}`);
+    if (networkAction || network.busy) status = t('network.working');
+    $('#network-status').textContent = status;
+    const issue = networkFeedback || network.error || (network.supported === false ? i18n.message('network.unsupported') : null);
+    $('#network-error').hidden = !issue;
+    $('#network-error').textContent = issue ? asText(issue) : '';
+    const validAddress = /^(10\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+|192\.168\.\d+)\.1$/.test(networkSelection.address) &&
+      networkSelection.address.split('.').every(n => Number(n) <= 255);
+    if (!validAddress) $('#network-apply').disabled = true;
+    $('#network-ps5').textContent = validAddress ? t('network.ps5', { address: networkSelection.address, ps5: networkSelection.address.replace(/\.1$/, '.2') }) : '';
+  }
+
+  async function runNetwork(action) {
+    if (networkAction || !api) return;
+    networkAction = true; networkFeedback = null; render();
+    try {
+      const result = action === 'apply' ? await api.configureNetwork({ mode: networkSelection.mode, adapterId: networkSelection.adapterId, address: networkSelection.address.trim() }) :
+        action === 'clear' ? await api.clearNetwork() : await api.refreshNetwork();
+      if (result?.ok === false) throw result.error;
+      if (action !== 'refresh') elements.interface.value = '';
+      mergeState(result);
+    } catch (cause) { networkFeedback = cause?.key ? cause : i18n.serializeError(cause); }
+    finally { networkAction = false; render(); }
+  }
+
   function hasRunningService(service = {}) {
     return ['dns', 'https', 'http'].some((key) => statusInfo(service?.[key]).active);
   }
@@ -306,6 +371,7 @@
   }
 
   function render() {
+    renderNetwork(currentState || {});
     if (!currentState) return;
     const state = currentState;
     const service = state.service || {};
@@ -550,6 +616,12 @@
   }
 
   elements.sourceUrl.addEventListener('input', () => { locallyEdited.add(elements.sourceUrl); render(); });
+  $('#network-mode').addEventListener('change', () => { networkSelection.mode = $('#network-mode').value; networkFeedback = null; render(); });
+  $('#network-adapter').addEventListener('change', () => { networkSelection.adapterId = $('#network-adapter').value; networkFeedback = null; render(); });
+  $('#network-address').addEventListener('input', () => { networkSelection.address = $('#network-address').value; networkFeedback = null; render(); });
+  $('#network-apply').addEventListener('click', () => runNetwork('apply'));
+  $('#network-clear').addEventListener('click', () => runNetwork('clear'));
+  $('#network-refresh').addEventListener('click', () => runNetwork('refresh'));
   elements.entryPath.addEventListener('input', () => { locallyEdited.add(elements.entryPath); render(); });
   elements.targetDomain.addEventListener('input', () => locallyEdited.add(elements.targetDomain));
   for (const input of [elements.ps5Ip, elements.elfPort, elements.managerPort])

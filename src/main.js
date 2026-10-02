@@ -20,6 +20,8 @@ const y2jb = require('./ps5/y2jb-installer');
 const { downloadArchive, validateEntryPath, METADATA_FILENAME } = require('./core/downloader');
 const { getCertificate, validDomain } = require('./core/certificate');
 const { createController } = require('./service/controller');
+const { createConfigurator } = require('./network/configuration');
+const { createSystemDriver } = require('./network/system');
 
 const helperIndex = process.argv.indexOf('--service-helper');
 if (helperIndex >= 0) {
@@ -27,6 +29,8 @@ if (helperIndex >= 0) {
     process.stderr.write(error.stack || String(error));
     process.exit(1);
   });
+} else if (!app.requestSingleInstanceLock()) {
+  app.quit();
 } else {
   const DEFAULT_DOMAIN = 'manuals.playstation.net';
   const DEFAULT_SOURCE_URL = 'https://github.com/ntfargo/Relapse-Exploit';
@@ -45,6 +49,10 @@ if (helperIndex >= 0) {
   let remotePromise = null;
   let componentCheckBusy = false;
   let allowClose = false;
+  let networkConfigurator;
+  let networkBusy = false;
+  let networkRefresh = null;
+  let hostBusy = false;
   const componentAborts = new Map();
   let configData = null;
   let state = {
@@ -56,6 +64,7 @@ if (helperIndex >= 0) {
     components: Object.fromEntries(Object.keys(CATALOG).map(id => [id, { phase: 'waiting', progress: null, meta: null, error: null }])),
     pkgSelection: null, gameSelection: null, remoteTask: null,
     componentRuntime: { payloadManager: { phase: 'unchecked', target: '', error: null } },
+    network: { supported: ['win32', 'darwin'].includes(process.platform), adapters: [], managed: null, busy: false, status: 'idle', error: null },
   };
   let configWrite = Promise.resolve();
 
@@ -114,6 +123,12 @@ if (helperIndex >= 0) {
     contentDir = path.join(dataDir, 'content', 'current');
     certDir = path.join(dataDir, 'certificates');
     componentDir = path.join(dataDir, 'components');
+    networkConfigurator = createConfigurator({ file: path.join(dataDir, 'network-config.json'), read: () => createSystemDriver().read(),
+      mutate: async networkRequest => {
+        const helper = await createController({ executable: process.execPath, appPath: app.getAppPath(), packaged: app.isPackaged,
+          config: { networkRequest }, elevated: true, timeoutMs: 120000 });
+        try { return helper.result; } finally { await helper.stop(); }
+      } });
     configData = { selectedIp: '', sourceUrl: DEFAULT_SOURCE_URL, entryPath: 'index.html', targetDomain: DEFAULT_DOMAIN,
       language: 'system', ps5Target: { ...DEFAULT_TARGET }, downloadRoute: 'direct' };
     try {
@@ -173,6 +188,7 @@ if (helperIndex >= 0) {
     return publicState();
   }
   async function startDownload(_event, options) {
+    if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
     if (controller) throw error('SERVICE_RUNNING', 'error.stopBeforeUpdate');
     if (abortController) throw error('DOWNLOAD_IN_PROGRESS', 'error.downloadInProgress');
     const sourceUrl = String(options?.sourceUrl || '').trim();
@@ -202,6 +218,7 @@ if (helperIndex >= 0) {
     } finally { abortController = null; emit(); }
   }
   async function startHost(_event, options) {
+    if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
     if (controller) return publicState();
     if (abortController) throw error('DOWNLOAD_IN_PROGRESS', 'error.waitForDownload');
     if (!state.download.meta) throw error('DOWNLOAD_REQUIRED', 'error.downloadFirst');
@@ -291,6 +308,7 @@ if (helperIndex >= 0) {
     return { ok: true };
   }
   async function downloadComponent(_event, id) {
+    if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
     component(id);
     if (remoteAbort && state.remoteTask?.label === id) throw error('REMOTE_BUSY', 'remote.busy');
     if (componentAborts.has(id)) throw error('DOWNLOAD_IN_PROGRESS', 'error.downloadInProgress');
@@ -328,6 +346,7 @@ if (helperIndex >= 0) {
     emit();
   }
   async function checkComponent(_event, id) {
+    if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
     if (id !== 'payloadManager') throw error('UNSUPPORTED_COMPONENT_CHECK', 'remote.checkUnsupported');
     if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
     const target = normalizeTarget(state.ps5Target);
@@ -341,7 +360,50 @@ if (helperIndex >= 0) {
     } finally { componentCheckBusy = false; }
     return publicState();
   }
+  async function refreshNetwork() {
+    if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
+    if (!networkRefresh) networkRefresh = (async () => {
+      try {
+        const snapshot = await networkConfigurator.inspect();
+        state.network = { ...state.network, ...snapshot, error: null, supported: true };
+      } catch (cause) { state.network.error = i18n.serializeError(cause); }
+      emit();
+      return publicState();
+    })().finally(() => { networkRefresh = null; });
+    return networkRefresh;
+  }
+  async function changeNetwork(action, options) {
+    if (networkBusy || hostBusy || controller || remoteAbort || componentCheckBusy || abortController || componentAborts.size)
+      throw error('NETWORK_BUSY', 'network.stopFirst');
+    networkBusy = true;
+    state.network.busy = true;
+    state.network.error = null;
+    emit();
+    try {
+      // Finish an earlier read before mutating so a stale snapshot cannot replace the result.
+      await networkRefresh;
+      const result = await networkConfigurator.change(action, options);
+      state.network.status = result.status;
+      if (result.address) {
+        state.selectedIp = result.address;
+        await commitConfig({ selectedIp: result.address });
+      }
+    } catch (cause) {
+      state.network.status = 'failed';
+      state.network.error = i18n.serializeError(cause);
+      throw cause;
+    } finally {
+      try { Object.assign(state.network, await networkConfigurator.inspect()); }
+      catch (cause) { state.network.error ||= i18n.serializeError(cause); }
+      networkBusy = false;
+      state.network.busy = false;
+      publicState();
+      emit();
+    }
+    return publicState();
+  }
   async function openComponentUi(_event, id) {
+    if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
     if (id !== 'payloadManager') throw error('UNSUPPORTED_COMPONENT_CHECK', 'remote.checkUnsupported');
     if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
     const target = normalizeTarget(state.ps5Target);
@@ -359,6 +421,7 @@ if (helperIndex >= 0) {
     return publicState();
   }
   function startRemote(type, label, operation) {
+    if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
     if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
     const target = normalizeTarget(state.ps5Target);
     const id = crypto.randomUUID();
@@ -482,10 +545,18 @@ if (helperIndex >= 0) {
   app.whenReady().then(async () => {
     await loadState();
     ipcMain.handle('host:getState', () => publicState());
+    ipcMain.handle('network:refresh', handle(refreshNetwork));
+    ipcMain.handle('network:configure', handle((_event, options) => changeNetwork('apply', options)));
+    ipcMain.handle('network:clear', handle(() => changeNetwork('clear')));
     ipcMain.handle('host:download', handle(startDownload));
     ipcMain.handle('host:cancelDownload', () => { abortController?.abort(); return publicState(); });
-    ipcMain.handle('host:start', handle(startHost));
-    ipcMain.handle('host:stop', handle(stopHost));
+    const hostAction = action => handle(async (...args) => {
+      if (hostBusy || networkBusy) throw error('NETWORK_BUSY', 'network.busy');
+      hostBusy = true;
+      try { return await action(...args); } finally { hostBusy = false; }
+    });
+    ipcMain.handle('host:start', hostAction(startHost));
+    ipcMain.handle('host:stop', hostAction(stopHost));
     ipcMain.handle('host:setLanguage', handle(setLanguage));
     ipcMain.handle('host:setDownloadRoute', handle(setDownloadRoute));
     ipcMain.handle('host:setPs5Target', handle(setPs5Target));
@@ -511,6 +582,7 @@ if (helperIndex >= 0) {
       icon: path.join(__dirname, '..', 'assets', 'app-icon.png'),
       webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
     window.on('close', event => {
+      if (networkBusy) { event.preventDefault(); return; }
       if (!remoteAbort || allowClose) return;
       event.preventDefault();
       void dialog.showMessageBox(window, { type: 'warning', buttons: [
@@ -527,9 +599,15 @@ if (helperIndex >= 0) {
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     window.webContents.on('will-navigate', event => event.preventDefault());
     window.webContents.on('did-finish-load', emit);
+    void refreshNetwork();
   }).catch(error => { process.stderr.write(error.stack || String(error)); app.quit(); });
   app.on('window-all-closed', () => app.quit());
+  app.on('second-instance', () => {
+    if (window?.isMinimized()) window.restore();
+    window?.focus();
+  });
   app.on('before-quit', event => {
+    if (networkBusy) { event.preventDefault(); return; }
     if (remoteAbort && !allowClose) { event.preventDefault(); window?.close(); return; }
     abortController?.abort();
     for (const active of componentAborts.values()) active.abort();

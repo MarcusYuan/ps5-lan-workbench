@@ -10,6 +10,7 @@ async function runHelper(ticketPath) {
   if (!Number.isInteger(ticket.port) || !/^[a-f0-9]{64}$/.test(ticket.token)) throw new Error('Invalid service ticket');
   const socket = net.connect({ host: '127.0.0.1', port: ticket.port });
   let service;
+  let started = false;
   let closing = false;
   let buffer = '';
   const send = value => { if (!socket.destroyed) socket.write(JSON.stringify(value) + '\n'); };
@@ -30,8 +31,17 @@ async function runHelper(ticketPath) {
       buffer = buffer.slice(index + 1);
       let message;
       try { message = JSON.parse(line); } catch { socket.destroy(); return; }
-      if (message.type === 'start' && !service) {
+      if (message.type === 'start' && !started) {
+        started = true;
         const config = message.config;
+        if (config?.networkRequest) {
+          const { executeChange } = require('../network/configuration');
+          const { createSystemDriver } = require('../network/system');
+          executeChange(config.networkRequest, createSystemDriver())
+            .then(result => send({ type: 'ready', result }))
+            .catch(error => { send({ type: 'error', error: serializeError(error) }); socket.end(); });
+          continue;
+        }
         startServices({ ...config, onEvent: event => send({ type: 'event', event }) })
           .then(result => { service = result; send({ type: 'ready', ports: { dns: result.dnsPort, https: result.httpsPort, http: result.httpPort } }); })
           .catch(error => { send({ type: 'error', error: serializeError(error) }); socket.end(); });

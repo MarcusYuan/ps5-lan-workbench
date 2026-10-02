@@ -4,6 +4,9 @@ const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('localHost', Object.freeze({
   getState: () => ipcRenderer.invoke('host:getState'),
+  refreshNetwork: () => ipcRenderer.invoke('network:refresh'),
+  configureNetwork: options => ipcRenderer.invoke('network:configure', options),
+  clearNetwork: () => ipcRenderer.invoke('network:clear'),
   download: options => ipcRenderer.invoke('host:download', options),
   cancelDownload: () => ipcRenderer.invoke('host:cancelDownload'),
   start: options => ipcRenderer.invoke('host:start', options),
