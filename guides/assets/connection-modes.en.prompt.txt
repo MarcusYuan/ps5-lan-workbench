@@ -1,0 +1,21 @@
+Generated with the built-in image_gen tool.
+
+Use case: text-localization. Create a fully ENGLISH version of the supplied Chinese PS5 Local Host connection guide, preserving its layout, illustration style, diagrams, blue/teal color palette and every numeric IP. Remove all Chinese text and replace with clear, well-sized English. Can adjust spacing/font size to fit cleanly but no tiny unreadable labels. Portrait high-resolution.
+Title "Two ways to connect. Keep your internet IP."
+Subtitle "PS5 Local Host · Add a service IP"
+LEFT upper panel title "Single adapter · Shared router". Router "Same router" / "Allow client communication"; PC "Computer · One adapter"; PS5 "PS5"; laptop block "Internet IP: unchanged" / "Added IP: 192.168.100.1". Action "Select your internet adapter". Footnote "Disable AP / client isolation". Preserve laptop and PS5 BOTH connecting by Wi-Fi to SAME router. No direct cable here.
+RIGHT panel title "Two adapters · Direct cable". Router "Internet access" and "Router"; laptop "Computer · Two adapters"; direct wire "Ethernet to PS5"; PS5 "PS5"; laptop block "Wi-Fi: keep existing settings" / "Add to Ethernet: 192.168.100.1". Action "Select the adapter wired to PS5". Footnote "No router in the PC-to-PS5 cable path". Preserve dashed Wi-Fi computer-router and separate direct solid laptop-PS5 cable.
+Middle banner "Keep existing IP, DHCP, gateway and DNS".
+Parameter section "Default settings for both modes". Left card "Computer · Added by the app" / "Service IP: 192.168.100.1" / "Mask: 255.255.255.0" / "Add an address. Keep the original."
+Right card "PS5 · Enter manually" / "IP: 192.168.100.2" / "Mask: 255.255.255.0" / "Gateway: 192.168.100.1" / "Primary DNS: 192.168.100.1".
+Note "Subnet conflict? Choose another service IP and update PS5 settings as shown in the app."
+3 step heading "Three setup steps":
+1 "Select mode and adapter" / "Match your physical connection."
+2 "Configure IP automatically" / "Complete system authorization."
+3 "Enter PS5 settings" / "Save the same PS5 IP in the app."
+Cleanup header "When finished: Clear app-added configuration"
+Text "Stop services, downloads and transfers first. Remove only the app's additions."
+Text "Closing the app keeps the IP. Configure again after a computer restart."
+Footer "PS5 gateway is for local access. Internet sharing and bridging stay off."
+Small footer "Connection diagram. PS5 communication still needs hardware verification."
+Do not introduce extra claims or addresses. Must not imply original internet IP is replaced or DHCP disabled.

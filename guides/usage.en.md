@@ -16,24 +16,19 @@ Windows uses temporary DHCP/static-address coexistence. If the adapter already h
 
 Interrupted operations, canceled authorization and failed recovery retain the record. On the next launch, inspect the message and clear the app-added configuration before retrying. Changes to existing internet settings or unconfirmed results are not reported as success; check system network settings. Do not manually delete the record and repeatedly configure. Validation includes simulated commands and failure scenarios for both platforms, plus actual address addition and cleanup on Ethernet and Wi-Fi on one Windows computer. Tests used the application configuration module and helper process, verified local TCP communication through the added address and public HTTPS requests, and confirmed restoration of original IP, DHCP, gateway, DNS and coexistence settings after cleanup. An initially unaddressed direct-connect adapter, macOS hardware operation, expiration after reboot and PS5-side connectivity remain unverified.
 
-## Direct computer-to-PS5 network setup
+## Single- and two-adapter connection diagram
 
-Follow the [seven steps in the README](../README.en.md#seven-steps-from-setup-to-playing). Use the computer's Wi-Fi interface to download resources over your usual network, and connect its Ethernet interface directly to the PS5 with a cable. No router is needed between them.
+Start with [Connection and IP settings in the README](../README.en.md#connection-and-ip-settings). Both modes use “Configure IP automatically” while preserving the computer's internet configuration. The diagram shows both topologies and default parameters.
 
-![Direct computer-to-PS5 network setup and seven-step workflow](assets/direct-connect-flow.en.png)
+![Single and two adapters: add a service IP, enter PS5 settings manually and clear app-added settings](assets/connection-modes.en.png)
 
-| Setting | Computer Ethernet interface | PS5 wired network |
-| --- | --- | --- |
-| IPv4 | `192.168.100.1` | `192.168.100.2` |
-| Subnet mask | `255.255.255.0` | `255.255.255.0` |
-| Default gateway | Leave blank | `192.168.100.1` |
-| Primary DNS | Leave blank; retain Wi-Fi settings | `192.168.100.1` |
+- **Single adapter:** connect the computer and PS5 to the same router. The service IP is added to the computer's current internet adapter. PS5 can connect to that router by Wi-Fi or cable; client isolation may block local traffic.
+- **Two adapters:** keep one computer adapter connected to the internet and cable another Ethernet adapter directly to PS5. Add the service IP to the direct-connect adapter. The internet adapter stays unchanged; the computer-to-PS5 cable does not pass through a router.
+- **PS5 settings:** default IP `192.168.100.2`, mask `255.255.255.0`, and primary DNS and gateway both set to computer service IP `192.168.100.1`. Enter these console settings manually and save the same PS5 address in the app. Update these values together when changing the service subnet.
 
-Enter the address and mask in the computer Ethernet interface's IPv4 properties, keeping Wi-Fi unchanged. On the PS5, select a wired connection and manually enter the network settings. Disable automatic system software downloads and installation. On Windows, use “Run as administrator”; on macOS, grant permissions when starting services. This app does not change the PS5 network settings or disable updates for you.
+Adding an IP does not share internet access. The app does not enable bridging or internet forwarding, change PS5 network settings or disable updates. Disable automatic system software downloads and installation on the console yourself. Configure temporary addresses again after a computer restart; clearing the computer's additions does not reset PS5 settings.
 
-Select `192.168.100.1` as the app's interface and save `192.168.100.2` as its PS5 target. A gateway setting alone does not make the computer forward internet traffic. Keep bridging and internet sharing disabled. If Wi-Fi already uses `192.168.100.0/24`, resolve the interface subnet conflict before using these addresses.
-
-Initial app, repository, and component downloads require internet access on the computer. Web files and verified components stay in its app user data directory. Local services, cached component delivery, local PKG installation, and FTP transfers then use the direct cable. Pages or third-party components may have their own external dependencies; check their instructions. The PS5 does not need internet access through the computer.
+Initial downloads need internet access on the computer. Cached pages, components and local files can use the LAN; external dependencies of pages or third-party components depend on those resources. The connection diagram above is Figure 1; [see Figure 2 for the complete seven-step workflow and each step's purpose](../README.en.md#seven-steps-from-setup-to-playing).
 
 ## Host a web page locally
 
@@ -48,7 +43,7 @@ The app generates a self signed certificate with a SAN for the target domain and
 
 ## Components and local PKGs
 
-1. Enter and save PS5 IPv4 `192.168.100.2` separately at the top of the app. Confirm that the ELF Loader available after injection accepts computer connections. Saving the address does not probe the console. Computer Ethernet address `192.168.100.1` remains the address for DNS and web hosting.
+1. Enter and save the PS5 IPv4 address (default `192.168.100.2`) separately at the top of the app. Confirm that the ELF Loader available after injection accepts computer connections. Saving the address does not probe the console. The computer service IP (default `192.168.100.1`) hosts DNS and web services on the adapter selected in either mode. Update both devices' parameters if you change the subnet.
 2. Under “Install components,” inspect the upstream source and download the component you need. The app verifies the pinned release asset's SHA-256 hash. Only when you click “Load on PS5” does it check the default port 9021 and send the ELF. Confirm WebKit Autoloader and Kstuff FPKG operation on the PS5; PKG Manager readiness is checked through its default port 8844.
 3. Payload Manager v0.5.2 can be checked and its management page opened without a local ELF download. The app checks its version and service response on port 8084. Loading skips the send when it is already running; after a send the app waits up to 30 seconds for confirmation. Payload Manager may execute an existing console autoload list. This app does not change that list.
 4. Under “Install a local PKG,” select or drop one `.pkg` from your computer and click “Install on PS5.” The app transfers it in segments through PKG Manager Direct Install. This needs no SMB share and does not depend on port 9021. Keep the computer and source file available until the PS5 reports an installation result.

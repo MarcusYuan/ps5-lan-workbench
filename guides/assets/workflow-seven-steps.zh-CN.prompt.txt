@@ -1,0 +1,53 @@
+Generated with the built-in image_gen tool.
+
+Use case: infographic-diagram. Create ONE NEW Simplified Chinese seven-step workflow poster for PS5 Local Host README. The supplied old poster is a STYLE REFERENCE only: retain its navy/blue/teal palette, white background, clear numbered vertical spine, compact illustrated action cards and separate WHY column. Replace its content with the instructions below. Portrait high resolution, approximately 1536x2048, readable large Chinese sans-serif. No watermark, no invented screenshots, no game artwork.
+
+This is IMAGE 2 in a TWO-IMAGE user guide. IMAGE 1 already explains BOTH single-adapter/shared-router and dual-adapter/direct-cable topologies and all IP parameters. Therefore REMOVE the old large direct-cable-only network drawing, its IP tables and its fixed Ethernet-only claims. Spend the space on readable workflow details. Small neutral laptop and PS5 icons by the title are fine, but do not draw a new topology. Do not imply every reader uses a direct cable.
+
+TITLE "从准备到游玩：七步操作"
+SUBTITLE "两种连接模式通用 · 每一步怎么做、为什么"
+Intro strip "先看图 1 选择接线方式，再按本图操作"
+
+Exactly seven numbered rows, each with an action heading, short instruction, and a visibly separated "为什么" column.
+
+1 heading "下载并打开软件"
+Action "下载适合电脑的应用包；Windows 以管理员身份打开，macOS 按系统提示授权。"
+Why "本地 DNS、网页服务和网卡配置需要相应权限。"
+
+2 heading "配置网络，关闭 PS5 自动更新"
+Action "选模式和网卡 → 自动配置 IP；手填 PS5 参数并保存地址，关闭主机自动下载与安装更新。"
+Why "建立本地连接，减少自动更新改变固件带来的兼容性变化。"
+
+3 heading "下载网页仓库，启动本地服务"
+Action "确认仓库适配固件；默认 Relapse，点击「下载并检查」→「启动本地服务」。"
+Why "把网页存到电脑，由电脑提供本地 DNS 与网页服务。"
+
+4 heading "在 PS5 打开用户指南，执行注入"
+Action "设置 → 指南与提示、健康与安全以及其他信息 → 用户指南；按网页说明操作并确认结果。"
+Why "PS5 通过电脑的 DNS 加载本地网页；注入结果以主机为准。"
+
+5 heading "下载并启动需要的插件"
+Action "按用途选择插件；ELF 插件先确认 Loader 可接收，再「下载」→「加载到 PS5」。"
+Why "安装、传输、挂载和运行支持由不同插件提供；发送后需在 PS5 确认启动。"
+
+6 heading "按文件类型安装或传输"
+Make THIS ROW TALLER with two clear branches; keep all branch content inside step 6, NOT additional numbered rows.
+Branch A label ".pkg 文件"
+"先启动 PKG Manager →「安装本地 PKG」→「安装到 PS5」。"
+Branch B label "完整文件夹 / .exfat / .ffpkg"
+"先启动 FTP Server →「发送游戏目录 / 镜像」→ 用 ShadowMountPlus 扫描、注册与挂载。"
+Why "PKG 走安装；文件夹和镜像走 FTP 传输，再由加载器处理。两条路径均需匹配的运行环境。"
+
+7 heading "在 PS5 确认结果，再尝试游玩"
+Action "确认安装或注册、所需插件和固件兼容性，再启动游戏。"
+Why "传输完成、安装或注册成功、游戏实际运行是不同结果。"
+
+Bottom optional small unnumbered box:
+"可选：以后从 YouTube 启动"
+"首次注入后，按上游要求准备 YouTube，再通过 FTP 安装 Y2JB Autoloader；这是可选入口，不代替首次准备。"
+Footer main:
+"本地使用：电脑首次下载需联网；缓存与本地文件可走局域网。"
+Footer secondary:
+"PS5 无需外网；第三方资源可能有外网依赖。内容与固件兼容性需实机确认，仅用于有权使用的设备与文件。"
+
+Critical: every row has WHAT and WHY. Show both game file branches accurately. Do not claim uploading means installed, or installed means playable. Do not call .ffpkg a .pkg installer. Do not show a direct-only network topology. Preserve exact component names PKG Manager, FTP Server, ShadowMountPlus and Y2JB Autoloader. Avoid compatibility promises and outdated concrete plugin versions.

@@ -1,0 +1,48 @@
+Generated with the built-in image_gen tool.
+
+Use case: text-localization. Produce a fully ENGLISH version of the supplied Chinese PS5 Local Host workflow poster. This is IMAGE 2 of a two-image guide; keep the composition, seven numbered rows, taller step 6 with two branches, optional unnumbered YouTube box, illustrations, blue/navy/teal palette and white background. Translate all Chinese into the exact English below. Adjust font sizes and wrapping to remain readable, no cropped text, no Chinese remaining, no new diagrams. Portrait high resolution.
+
+TITLE "From setup to playing: Seven steps"
+SUBTITLE "For both connection modes · What to do and why"
+Intro strip "Use Figure 1 for network setup, then follow these steps"
+
+Row 1 heading "Download and open the app"
+Action "Choose the package for your computer. Windows: run as administrator. macOS: grant permissions when prompted."
+Why "Local DNS, web services and adapter setup need the relevant permissions."
+
+Row 2 heading "Configure the network and disable PS5 updates"
+Action "Select mode and adapter → Configure IP automatically. Enter PS5 settings, save its IP, and disable automatic system software downloads and installation."
+Why "Establish local communication and reduce firmware compatibility changes caused by automatic updates."
+
+Row 3 heading "Download web resources and start services"
+Action "Check firmware compatibility. Relapse is prefilled. Click Download and verify → Start local services."
+Why "Store web resources on the computer and serve local DNS and pages to PS5."
+
+Row 4 heading "Open the PS5 User's Guide for injection"
+Action "Settings → Guide & Tips, Health & Safety, and Other Information → User's Guide. Follow the page and confirm the result."
+Why "PS5 uses the computer's DNS to load the local page. Confirm injection on the console."
+
+Row 5 heading "Download and start the components you need"
+Action "Choose components by purpose. For ELF payloads, confirm the Loader accepts connections, then Download → Load on PS5."
+Why "Different components handle installation, transfer, mounting and runtime support. Confirm startup on PS5."
+
+Row 6 heading "Install or transfer by file type"
+Branch A heading ".pkg file"
+Action "Start PKG Manager → Install a local PKG → Install on PS5."
+Branch B heading "Complete folder / .exfat / .ffpkg"
+Action "Start FTP Server → Send game folder / image → use ShadowMountPlus to scan, register and mount."
+Why "PKGs use installation. Folders and images use FTP transfer and a loader. Both need a compatible runtime environment."
+Keep branches inside the larger STEP 6 card.
+
+Row 7 heading "Confirm on PS5, then try playing"
+Action "Check installation or registration, required components and firmware compatibility, then launch the game."
+Why "Transfer completion, successful installation or registration, and actual gameplay are separate results."
+
+Optional unnumbered card heading "Optional: Launch from YouTube later"
+Action "After initial injection, prepare YouTube as required upstream and install Y2JB Autoloader through FTP. This optional entry does not replace initial preparation."
+Why "Another entry for later use; the earlier setup steps still apply."
+
+Footer main "Local use: Initial downloads need internet. Cached resources and local files use the LAN."
+Footer secondary "PS5 does not need internet for local use; third-party resources may have external dependencies. Content and firmware compatibility need hardware verification. Use authorized devices and files."
+
+Every numbered row must have WHAT and WHY. Distinguish .ffpkg images from .pkg installation packages. Do not claim transferred means playable. Do not show a direct-only network diagram. Keep exact component names. No watermark or unsupported compatibility promises.

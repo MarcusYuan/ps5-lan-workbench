@@ -6,6 +6,8 @@ Host local injection pages, manage components and install authorized local game 
 
 **[Download the latest version](https://github.com/MarcusYuan/ps5-lan-workbench/releases/latest)** · [Detailed guide](guides/usage.en.md) · [Contact and feedback](#contact-and-community)
 
+For first use, follow two figures: **[Figure 1: Connection and IP settings](#connection-and-ip-settings)** explains both physical connections; **[Figure 2: The complete seven-step workflow](#seven-steps-from-setup-to-playing)** explains what to do next, how and why.
+
 > For technical exchange and authorized testing. Web resources, third-party ELFs, and game content are not bundled. PS5 hardware compatibility still requires verification; a completed transfer does not confirm successful execution on the console.
 
 ## Download and open
@@ -23,40 +25,84 @@ ZIP packages are also available for macOS. **Source code contains the source fil
 
 ## Connection and IP settings
 
-Choose a mode in “Connection mode and computer IP setup”:
+**Starting with v0.8.0, the app can add a service IP to the selected adapter while preserving the computer's existing internet IP, DHCP, gateway and DNS.** Let the app configure the computer; enter the PS5 settings manually.
+
+### 1. Choose the mode that matches your connection
 
 | Mode | Connection | Adapter to select |
 | --- | --- | --- |
-| Single adapter | Computer and PS5 connect to the same router, including over Wi-Fi | The computer's current internet adapter |
+| Single adapter | Computer and PS5 connect to the same router. Both can use Wi-Fi, or one can be wired and the other wireless | The computer's current internet adapter |
 | Two adapters | One adapter provides internet access; another connects directly to PS5 by cable | The adapter connected to PS5 |
 
-Click **Configure IP automatically** to add the default service address `192.168.100.1/24`. Existing IP, DHCP, gateway and DNS settings are preserved. If the address or subnet conflicts, choose another private address ending in `.1` and use the matching PS5 settings shown in the app. Automatic configuration supports Windows and macOS and may request system authorization.
+Single-adapter mode suits laptops with only one usable adapter: **the same adapter retains its internet IP and gains an additional service IP**. The router must allow device communication: disable AP/client isolation and avoid isolated guest networks. Two-adapter mode adds the service IP to the adapter wired to PS5, which must not have a default gateway.
 
-Manually enter PS5 IP `192.168.100.2`, mask `255.255.255.0`, primary DNS `192.168.100.1` and gateway `192.168.100.1`, then save the same PS5 address in the app. These parameters provide local access; internet sharing and bridging are not enabled. The router must allow communication between clients. Local use does not require internet access on PS5.
+**Figure 1: Connection and IP settings.** Both single- and two-adapter setups appear in this one figure.
 
-After stopping services and transfers, **Clear app-added configuration** removes the app-added address. Pre-existing addresses are not removed. Closing the app retains the temporary address; restarting the computer expires it, so configure it again afterward. [Configuration, recovery and limitations](guides/usage.en.md#automatic-ip-configuration-and-cleanup)
+![Figure 1: Both connection modes, added service IP, PS5 settings and cleanup](guides/assets/connection-modes.en.png)
+
+### 2. Add the computer IP automatically
+
+1. Under **Connection mode and computer IP setup** at the top of the app, select the mode and adapter from the table above.
+2. Keep the default added service IP `192.168.100.1`, click **Configure IP automatically**, and complete Windows/macOS authorization. Stop local services and finish or cancel downloads and transfers first.
+3. Wait for the result. Confirm that **Computer network interface** below has selected `192.168.100.1`. Successful configuration selects this address for local DNS and web services automatically.
+
+**Why:** the service IP supports local computer-to-PS5 communication, while the original address continues to serve the computer's internet connection. Automatic configuration does not require replacing the original IP in system adapter properties or disabling DHCP.
+
+### 3. Enter the PS5 settings manually
+
+For single-adapter mode, select the PS5 network connected to the shared router. For two-adapter mode, select the wired connection to the computer. Choose manual IP and DNS settings and enter:
+
+| Setting | Computer: app adds or preserves | PS5: enter manually |
+| --- | --- | --- |
+| Service IP / IP address | Add `192.168.100.1`; retain existing IPs | `192.168.100.2` |
+| Subnet mask | Use `255.255.255.0` for the added address | `255.255.255.0` |
+| Default gateway | Preserve existing settings; add no gateway for the service IP | `192.168.100.1` |
+| DNS | Preserve existing settings | Primary DNS: `192.168.100.1` |
+
+Back in the app, enter `192.168.100.2` under **PS5 IP** and click **Save PS5 address**. Also disable automatic system software downloads and installation on PS5. The app does not change these console settings for you.
+
+**Why:** the computer service IP and PS5 IP share a subnet, and PS5 primary DNS points to the computer's local service. This gateway is for local access; the app does not enable internet sharing or bridging and does not forward internet traffic to PS5.
+
+> **Subnet conflict?** These are defaults, not mandatory fixed addresses. Choose another unused private service IP ending in `.1`, then update PS5 IP, gateway and primary DNS as shown in the app. For example, service IP `172.31.253.1` pairs with PS5 IP `172.31.253.2`, gateway and primary DNS `172.31.253.1`, and mask `255.255.255.0`. This example must also pass the local conflict check.
+
+### 4. Clear the configuration or use it again later
+
+- **Clear:** stop local services and finish downloads, transfers and remote tasks, then click **Clear app-added configuration**. Only the app's additions are removed. Original IPs and internet settings, including a pre-existing service address, are preserved. Manually entered PS5 settings must be changed separately.
+- **Close the app:** the added address stays for the current boot and can be reused when the app opens again.
+- **Restart the computer:** temporary addresses expire; click **Configure IP automatically** again. Expiration after reboot has not been hardware-tested. See the [detailed guide](guides/usage.en.md#automatic-ip-configuration-and-cleanup) for failures and recovery.
 
 The computer needs internet access for initial downloads. Cached resources and local files can then be used over the local network; third-party resources may have their own internet dependencies. Automatic configuration has been tested on one Windows computer for actual address addition and cleanup on Ethernet and Wi-Fi while preserving existing internet settings. macOS hardware operation and PS5 connectivity remain unverified.
 
 ## Seven steps from setup to playing
 
-The diagram below illustrates the two-adapter direct connection. For single-adapter mode, use the shared-router setup above.
+Both connection modes follow the steps below. Use the connection diagram and settings table above for step 2.
 
-![Direct computer-to-PS5 network setup and seven-step workflow](guides/assets/direct-connect-flow.en.png)
+**Figure 2: The complete workflow from setup to playing.** Each step includes its action and purpose. Step 6 branches by file type; YouTube is an optional entry after initial preparation.
+
+![Figure 2: Seven steps and their purposes, including PKG installation, folder or image transfer and the optional YouTube entry](guides/assets/workflow-seven-steps.en.png)
 
 | Step | What to do | Why |
 | --- | --- | --- |
 | 1. Download and launch | Get the app using the download link above. On Windows, right-click and select “Run as administrator.” On macOS, grant permissions when starting services. | Local DNS and web services need the relevant ports and system permissions. |
-| 2. Configure the network and disable automatic updates | undefined Disable automatic system software downloads and installation in the PS5 settings. | Fixed addresses allow direct communication; disabling automatic updates avoids firmware changes that may affect resource compatibility. |
+| 2. Configure the network and disable automatic updates | Choose the mode and adapter, click “Configure IP automatically,” manually enter the suggested PS5 settings, and save its address in the app. Disable automatic system software downloads and installation on PS5. | Fixed addresses allow local communication; disabling automatic updates avoids firmware changes that may affect resource compatibility. |
 | 3. Download the web repository and start services | “File source” defaults to the [Relapse repository](https://github.com/ntfargo/Relapse-Exploit), with `index.html` as the entry file. Check firmware compatibility, then click “Download and verify” → “Start local services.” You can use another authorized repository or direct HTTPS ZIP URL. Saved sources are retained. | The prefilled URL saves finding and copying the address; downloaded resources let the computer provide local web and DNS services to PS5. |
 | 4. Open the PS5 User's Guide for injection | Go to Settings → Guide & Tips, Health & Safety, and Other Information → User's Guide. Follow the selected page's instructions and confirm the injection result on the console. Menu names can vary with language or firmware. | Primary DNS directs the relevant User's Guide domain to the computer. Injection behavior and firmware compatibility depend on the selected repository. |
-| 5. Manage and send components from the computer | Confirm the PS5 ELF Loader accepts computer connections. Under “Install components,” download the components you need, click “Load on PS5,” and confirm startup on the console. Cached components can be sent again. | The receiver available after injection accepts components; the required management service must run before game installation. |
-| 6. Select and install a local game file | Start PKG Manager on the PS5. Under “Install a local PKG,” choose or drop an authorized `.pkg`, click “Install on PS5,” and keep the computer and file available until installation feedback returns. | The PS5 reads the installation file from the computer and PKG Manager handles installation, without downloading the game on the console. |
+| 5. Manage and send components from the computer | Download components by purpose. For ELF payloads, confirm the PS5 Loader accepts connections, click “Load on PS5,” and confirm startup on the console. Y2JB uses the FTP installation described below. | Different components provide transfer, installation, mounting and runtime support; start the required services on the console first. |
+| 6. Install or transfer by file type | For `.pkg`, start PKG Manager and use “Install a local PKG.” For complete folders or `.exfat` / `.ffpkg`, start FTP Server and use “Send game folder / image,” then let ShadowMountPlus scan, register and mount. Keep the computer and files available until the task finishes. | PKGs use installation; folders and images use file transfer and a loader. Both paths require a compatible runtime environment. |
 | 7. Confirm the result and start playing | Check installation on the PS5 and try launching the game. Confirm that required components are running and the content matches your firmware. | Transfer completion, successful installation, and actual startup are separate states; check the console's result. |
 
-Available components include WebKit Autoloader, PKG Manager, Payload Manager, Kstuff, ShadowMountPlus, FTP Server, and Web File Manager. Choose what you need. [Component details and prerequisites](guides/usage.en.md#components-and-local-pkgs)
+### Which components go with which task?
 
-For a complete game folder or an `.exfat` / `.ffpkg` image, replace step 6 with “Send game folder / image”:
+| Your task | Components to use | Confirm on PS5 |
+| --- | --- | --- |
+| Install a `.pkg` file | PKG Manager handles installation; runtime and firmware must be compatible | Installation result, then try launching |
+| Send a complete game folder or `.exfat` / `.ffpkg` image | FTP Server receives files; ShadowMountPlus scans, registers and mounts with a compatible Kstuff environment | Scan and registration notifications, then try launching |
+| Manage files and payloads | FTP Server / Web File Manager manage files; Payload Manager manages payloads, as needed | The required service has started and is accessible |
+| Choose an entry for later launches | WebKit Autoloader and Y2JB Autoloader are different entries; Y2JB requires preparation and FTP installation below | Actual execution of the selected entry |
+
+Third-party capabilities and compatibility depend on their documentation and hardware results. [Full component details and prerequisites](guides/usage.en.md#components-and-local-pkgs)
+
+For a complete game folder or an `.exfat` / `.ffpkg` image, step 6 uses “Send game folder / image” as follows:
 
 1. Start an FTP Server that accepts anonymous login on PS5, using port `2121` by default. Send files to `/data/homebrew/`; existing destinations are rejected.
 2. Fully close the game on PS5 first. Under “Install components,” select **ShadowMountPlus 1.7beta2 (default)** or **1.7beta3 (optional pre-release)**, click “Download” → “Load on PS5,” and confirm startup on the console. It needs a Kstuff environment matching your firmware; the current Kstuff FPKG test-version combination has not been verified on hardware. Both versions have separate caches; select beta2 to load it again. Beta3 is not a confirmed fix for launch black screens.
