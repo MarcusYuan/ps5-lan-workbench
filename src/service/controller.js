@@ -7,6 +7,7 @@ const path = require('node:path');
 const net = require('node:net');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
+const { createError } = require('../i18n');
 
 const shellQuote = value => `'${String(value).replace(/'/g, "'\\''")}'`;
 const psQuote = value => `'${String(value).replace(/'/g, "''")}'`;
@@ -29,7 +30,8 @@ function launch(executable, args, elevated) {
   throw new Error('Automatic system authorization is supported on macOS and Windows only.');
 }
 
-async function createController({ executable, appPath, packaged, config, elevated = false, onEvent = () => {}, timeoutMs = 30000 }) {
+async function createController({ executable, appPath, packaged, config, elevated = false, onEvent = () => {}, timeoutMs = 30000,
+  stopTimeoutMs = 3000, confirmStop = false }) {
   const token = crypto.randomBytes(32).toString('hex');
   const ticketDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'ps5-local-host-'));
   const ticketPath = path.join(ticketDir, 'ticket.json');
@@ -54,9 +56,13 @@ async function createController({ executable, appPath, packaged, config, elevate
     if (socket && !socket.destroyed) {
       socket.write(JSON.stringify({ type: 'stop' }) + '\n');
       await new Promise(resolve => {
-        const timeout = setTimeout(resolve, 3000);
+        const timeout = setTimeout(resolve, stopTimeoutMs);
         socket.once('close', () => { clearTimeout(timeout); resolve(); });
       });
+      if (confirmStop && !socket.destroyed) {
+        closed = false;
+        throw createError('HOTSPOT', 'hotspot.stopFailed');
+      }
       socket.destroy();
     }
     if (child && !child.killed && !elevated) child.kill('SIGTERM');
@@ -66,7 +72,12 @@ async function createController({ executable, appPath, packaged, config, elevate
   let rejectStart;
   const result = new Promise((resolve, reject) => {
     rejectStart = reject;
-    const fail = error => { if (settled) return; settled = true; clearTimeout(timer); reject(error); close(); };
+    const fail = error => {
+      if (settled) return;
+      settled = true; clearTimeout(timer);
+      if (confirmStop) void close().then(() => reject(error), reject);
+      else { reject(error); void close().catch(() => {}); }
+    };
     server.on('connection', peer => {
       if (socket) { peer.destroy(); return; }
       let authenticated = false;
@@ -112,8 +123,8 @@ async function createController({ executable, appPath, packaged, config, elevate
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
     await fsp.writeFile(ticketPath, JSON.stringify({ port: server.address().port, token }), { mode: 0o600, flag: 'wx' });
     child = launch(executable, helperArgs(appPath, ticketPath, packaged), elevated);
-    child.on('error', error => { if (!settled) { settled = true; clearTimeout(timer); rejectStart(error); close(); } });
-    child.on('exit', code => { if (!settled) { settled = true; clearTimeout(timer); rejectStart(new Error(`Service helper exited before startup (${code}).`)); close(); } else notifyExit(code); });
+    child.on('error', error => { if (!settled) { settled = true; clearTimeout(timer); rejectStart(error); void close().catch(() => {}); } });
+    child.on('exit', code => { if (!settled) { settled = true; clearTimeout(timer); rejectStart(new Error(`Service helper exited before startup (${code}).`)); void close().catch(() => {}); } else notifyExit(code); });
     return await result;
   } catch (error) {
     await close();

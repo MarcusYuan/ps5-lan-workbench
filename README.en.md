@@ -2,11 +2,11 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-Host local injection pages, manage components and install authorized local game files from your computer. Connect the computer and PS5 to the same router with one network adapter, or use a separate Ethernet adapter for a direct cable connection.
+Host local injection pages, manage components and install authorized local game files from your computer. Use a shared router with one adapter, a direct Ethernet cable with two adapters, or a Windows local hotspot for a direct wireless connection (experimental).
 
 **[Download the latest version](https://github.com/MarcusYuan/ps5-lan-workbench/releases/latest)** · [Detailed guide](guides/usage.en.md) · [Contact and feedback](#contact-and-community)
 
-For first use, follow two figures: **[Figure 1: Connection and IP settings](#connection-and-ip-settings)** explains both physical connections; **[Figure 2: The complete seven-step workflow](#seven-steps-from-setup-to-playing)** explains what to do next, how and why.
+For first use, follow two figures: **[Figure 1: Three connection modes and IP settings](#connection-and-ip-settings)** helps you choose a connection; **[Figure 2: The complete seven-step workflow](#seven-steps-from-setup-to-playing)** explains what to do next, how and why.
 
 > For technical exchange and authorized testing. Web resources, third-party ELFs, and game content are not bundled. PS5 hardware compatibility still requires verification; a completed transfer does not confirm successful execution on the console.
 
@@ -29,7 +29,7 @@ Under “Install components”, find **Garlic SaveMgr**, then click “Download�
 
 ## Connection and IP settings
 
-**Starting with v0.8.0, the app can add a service IP to the selected adapter while preserving the computer's existing internet IP, DHCP, gateway and DNS.** Let the app configure the computer; enter the PS5 settings manually.
+**Single- and two-adapter modes add a service IP. Local hotspot mode, introduced in v0.9.0, uses an address assigned by Windows. All three preserve existing computer internet settings.** Verify console network settings and its actual target IP on PS5, then enter them as described below.
 
 ### 1. Choose the mode that matches your connection
 
@@ -37,14 +37,17 @@ Under “Install components”, find **Garlic SaveMgr**, then click “Download�
 | --- | --- | --- |
 | Single adapter | Computer and PS5 connect to the same router. Both can use Wi-Fi, or one can be wired and the other wireless | The computer's current internet adapter |
 | Two adapters | One adapter provides internet access; another connects directly to PS5 by cable | The adapter connected to PS5 |
+| Local hotspot (Windows experimental) | The computer broadcasts Wi-Fi; PS5 connects directly without a router or cable in this link | The app identifies the hotspot virtual adapter and selects its actual IP |
 
 Single-adapter mode suits laptops with only one usable adapter: **the same adapter retains its internet IP and gains an additional service IP**. The router must allow device communication: disable AP/client isolation and avoid isolated guest networks. Two-adapter mode adds the service IP to the adapter wired to PS5, which must not have a default gateway.
 
-**Figure 1: Connection and IP settings.** Both single- and two-adapter setups appear in this one figure.
+**For hotspot mode, go directly to “Mode 3” below. Steps 2–4, the added-IP settings table and its cleanup instructions apply only to modes 1 and 2.** Hotspots require compatible Wi-Fi Direct hardware and drivers; macOS supports the first two modes only.
 
-![Figure 1: Both connection modes, added service IP, PS5 settings and cleanup](guides/assets/connection-modes.en.png)
+**Figure 1: Three connection modes and IP settings.** Fixed-address examples are separate from hotspot automatic addressing.
 
-### 2. Add the computer IP automatically
+![Figure 1: Single adapter, two adapters and Windows local hotspot, with separate address and shutdown instructions](guides/assets/connection-modes.en.png)
+
+### 2. Modes 1 and 2: Add the computer IP automatically
 
 1. Under **Connection mode and computer IP setup** at the top of the app, select the mode and adapter from the table above.
 2. **Service IP to add** defaults to `192.168.100.1`. If a subnet overlaps, check the named adapter or route and click **Use suggested IP** or enter another subnet. Click **Configure IP automatically** and complete Windows/macOS authorization. Stop local services and finish or cancel downloads and transfers first.
@@ -52,7 +55,7 @@ Single-adapter mode suits laptops with only one usable adapter: **the same adapt
 
 **Why:** the service IP supports local computer-to-PS5 communication, while the original address continues to serve the computer's internet connection. Automatic configuration does not require replacing the original IP in system adapter properties or disabling DHCP.
 
-### 3. Enter the PS5 settings manually
+### 3. Modes 1 and 2: Enter the PS5 settings manually
 
 For single-adapter mode, select the PS5 network connected to the shared router. For two-adapter mode, select the wired connection to the computer. Choose manual IP and DNS settings and enter:
 
@@ -71,7 +74,7 @@ Back in the app, enter `192.168.100.2` under **PS5 IP** and click **Save PS5 add
 
 Before switching from single- to two-adapter mode, **Clear app-added configuration**, then select the adapter wired to PS5. The app identifies the overlapping adapter address or route and offers **Use suggested IP** when a candidate is available. Original internet addresses are preserved, and a broad mask may still overlap with the default service subnet. The input retains the address for your next configuration; check **Current addresses on this adapter** for actual addresses. Suggestions pass only the computer configuration checks; PS5 connectivity still needs verification.
 
-### 4. Clear the configuration or use it again later
+### 4. Modes 1 and 2: Clear the configuration or use it again later
 
 - **Clear:** stop local services and finish downloads, transfers and remote tasks, then click **Clear app-added configuration**. Only the app's additions are removed. Original IPs and internet settings, including a pre-existing service address, are preserved. Manually entered PS5 settings must be changed separately.
 - **Close the app:** the added address stays for the current boot and can be reused when the app opens again.
@@ -79,9 +82,31 @@ Before switching from single- to two-adapter mode, **Clear app-added configurati
 
 The computer needs internet access for initial downloads. Cached resources and local files can then be used over the local network; third-party resources may have their own internet dependencies. Automatic configuration has been tested on one Windows computer for actual address addition and cleanup on Ethernet and Wi-Fi while preserving existing internet settings. macOS hardware operation and PS5 connectivity remain unverified.
 
+### 5. Mode 3: Windows local hotspot (experimental)
+
+Select **Local hotspot · Windows experimental** to broadcast password-protected Wi-Fi from your computer and connect PS5 directly. The computer retains its original network for downloads. The app does not enable internet sharing for PS5 and installs temporary hotspot isolation rules. macOS is unsupported; PS5 association and device-side internet isolation still need hardware testing.
+
+1. **Prepare:** download pages and required components first; stop services and finish downloads and transfers. If you used either adapter mode, **Clear app-added configuration** first. Turn off Windows Mobile hotspot, internet sharing and bridging.
+2. **Start on the computer:** choose hotspot mode, enter a name and password, click **Start local hotspot** and complete system authorization. Names contain 1–32 ASCII characters, start with a letter or digit and may include spaces, `_` or `-`. Passwords accept 8–63 printable ASCII characters without spaces. Passwords are not saved and must be entered on each start.
+3. **Connect PS5:** select this Wi-Fi name and enter its password. Use **automatic IP** first and wait for the computer hotspot IP in the app. If no usable address appears after connection, inspect the adapter, driver and interface error; do not bypass checks by copying the fixed-address table.
+4. **Set DNS and save the address:** manually set PS5 primary DNS to the displayed computer hotspot IP while retaining automatic IP. Do not add a public secondary DNS. Check the actual assigned IP on PS5, enter it in the app and click **Save PS5 address**. An observed peer IP is only a clue and does not establish PS5 identity.
+5. **Start services separately:** the app selects the actual hotspot interface; click **Start local services**, then continue with Figure 2. A started hotspot does not establish that DNS/web services are running or PS5 has accessed the page.
+6. **Stop:** stop services and finish downloads and transfers, then click **Stop hotspot**. Closing the app also stops it. Restart the hotspot next time and check its new address instead of reusing the previous one. Disable PS5 automatic updates yourself.
+
+| Hotspot setting | What to use |
+| --- | --- |
+| Computer hotspot IP | The actual Windows-assigned address displayed by the app |
+| PS5 IP, mask and gateway | Automatic; do not copy the fixed-address table for modes 1 and 2 |
+| PS5 primary DNS | Manually enter the current computer hotspot IP; avoid public secondary DNS |
+| PS5 IP in the app | The actual address checked on the console, saved manually |
+
+**For example**, if the app shows `192.168.137.1`, use it for primary DNS. This was observed on the tested computer and is not a fixed address for every system. Do not click Configure IP automatically in hotspot mode. DNS resolves only the configured target domain and does not forward other queries. A failed internet connection test alone does not establish that the local page is unreachable.
+
+Temporary hotspot isolation rules block IPv4/IPv6 forwarding to other networks and restrict access to local services. Forwarding settings on other adapters, including Clash/Mihomo, are preserved. Existing sharing, bridges or active Wi-Fi Direct interfaces still prevent startup; failed isolation stops the hotspot. PS5 connectivity and device-side internet isolation still require testing. [Limitations and diagnostics](guides/usage.en.md#windows-local-hotspot-experimental)
+
 ## Seven steps from setup to playing
 
-Both connection modes follow the steps below. Use the connection diagram and settings table above for step 2.
+All three modes follow the steps below. Follow Figure 1's branch in step 2. Download required resources before using the hotspot; its setup does not use the fixed-address table for the first two modes.
 
 **Figure 2: The complete workflow from setup to playing.** Each step includes its action and purpose. Step 6 branches by file type; YouTube is an optional entry after initial preparation.
 
@@ -90,7 +115,7 @@ Both connection modes follow the steps below. Use the connection diagram and set
 | Step | What to do | Why |
 | --- | --- | --- |
 | 1. Download and launch | Get the app using the download link above. On Windows, right-click and select “Run as administrator.” On macOS, grant permissions when starting services. | Local DNS and web services need the relevant ports and system permissions. |
-| 2. Configure the network and disable automatic updates | Choose the mode and adapter, click “Configure IP automatically,” manually enter the suggested PS5 settings, and save its address in the app. Disable automatic system software downloads and installation on PS5. | Fixed addresses allow local communication; disabling automatic updates avoids firmware changes that may affect resource compatibility. |
+| 2. Configure the network and disable automatic updates | Single/two adapters: select the adapter, configure IP automatically and enter PS5 settings manually. Hotspot: start it, connect PS5 by Wi-Fi with automatic IP and primary DNS pointing to the actual hotspot IP. Verify and save the PS5 address in all modes. Disable automatic system software downloads and installation on PS5. | Establish local communication; hotspots use assigned addresses. Disabling automatic updates reduces firmware compatibility changes. |
 | 3. Download the web repository and start services | “File source” defaults to the [Relapse repository](https://github.com/ntfargo/Relapse-Exploit), with `index.html` as the entry file. Check firmware compatibility, then click “Download and verify” → “Start local services.” You can use another authorized repository or direct HTTPS ZIP URL. Saved sources are retained. | The prefilled URL saves finding and copying the address; downloaded resources let the computer provide local web and DNS services to PS5. |
 | 4. Open the PS5 User's Guide for injection | Go to Settings → Guide & Tips, Health & Safety, and Other Information → User's Guide. Follow the selected page's instructions and confirm the injection result on the console. Menu names can vary with language or firmware. | Primary DNS directs the relevant User's Guide domain to the computer. Injection behavior and firmware compatibility depend on the selected repository. |
 | 5. Manage and send components from the computer | Download components by purpose. For ELF payloads, confirm the PS5 Loader accepts connections, click “Load on PS5,” and confirm startup on the console. Y2JB uses the FTP installation described below. | Different components provide transfer, installation, mounting and runtime support; start the required services on the console first. |
@@ -126,10 +151,10 @@ After later PS5 restarts, open YouTube to run the exploit and configured payload
 
 | Problem | Check first |
 | --- | --- |
-| Which IP address should I use? | Choose the mode and adapter. The default added computer service IP is `192.168.100.1`; save `192.168.100.2` as the PS5 address. If you change the subnet, follow the updated values shown in the app. |
+| Which IP address should I use? | Modes 1 and 2 follow the app's added-IP values, defaulting to computer `192.168.100.1` and PS5 `192.168.100.2`. Hotspot mode uses the displayed computer hotspot IP and the PS5's actual automatically assigned IP; do not copy the fixed-address table. |
 | A download fails | Use a repository URL or direct ZIP URL. For slow GitHub downloads, try “GitHub mirror acceleration”; turn it off if it fails. It uses a third-party service. |
 | Local services will not start | Read the app's error message and check system permissions and occupied ports. |
-| PS5 cannot open the page | Check the direct cable or whether the shared router permits communication between devices. Verify both IP addresses and masks, point PS5 primary DNS to the computer's service IP, and confirm local services are running. |
+| PS5 cannot open the page | Check the cable or router client communication. For hotspot mode, check Wi-Fi association and automatic IP assignment. Point primary DNS to the actual computer service IP and confirm local services are running. |
 | A component, PKG, or FTP connection fails | Check the PS5 address and confirm the required Loader, PKG Manager, or FTP Server is running on the console. |
 | The result is unconfirmed | Check the actual result on the PS5 before repeating the operation. |
 

@@ -221,7 +221,8 @@
   }
 
   function renderInterfaces(state) {
-    const interfaces = Array.isArray(state.interfaces) ? state.interfaces : [];
+    const hotspotActive = state.hotspot?.active || ['starting','started','ready','stopping'].includes(state.hotspot?.phase);
+    const interfaces = (Array.isArray(state.interfaces) ? state.interfaces : []).filter(item => !hotspotActive || item.address === state.hotspot.address);
     const selectedAddress = state.selectedIp || '';
     const previousValue = elements.interface.value;
     elements.interface.replaceChildren();
@@ -244,13 +245,49 @@
     }
 
     const values = [...elements.interface.options].map((option) => option.value);
-    const desired = [previousValue, selectedAddress].find((value) => value && values.includes(value)) || values[0] || '';
+    const preferred = hotspotActive ? [selectedAddress, previousValue] : [previousValue, selectedAddress];
+    const desired = preferred.find((value) => value && values.includes(value)) || values[0] || '';
     elements.interface.value = desired;
-    elements.interface.disabled = values.length === 0 || Boolean(busyAction) || hasRunningService(state.service);
+    elements.interface.disabled = hotspotActive || values.length === 0 || Boolean(busyAction) || hasRunningService(state.service);
   }
 
   function renderNetwork(state) {
     const network = state.network || {};
+    const hotspot = state.hotspot || {};
+    const hotspotActive = hotspot.active || ['starting', 'started', 'ready', 'stopping'].includes(hotspot.phase);
+    $('#network-mode option[value="hotspot"]').disabled = !hotspot.supported;
+    if (hotspotActive) networkSelection.mode = 'hotspot';
+    const hotspotMode = networkSelection.mode === 'hotspot';
+    $('#hotspot-fields').hidden = !hotspotMode;
+    for (const id of ['network-adapter', 'network-address']) $(`#${id}`).closest('.field').hidden = hotspotMode;
+    $('#network-lifetime').textContent = t(hotspotMode ? 'hotspot.lifetime' : 'network.lifetime');
+    $('#network-apply').textContent = t(hotspotMode ? 'hotspot.start' : 'network.apply');
+    $('#network-clear').textContent = t(hotspotMode ? 'hotspot.stop' : 'network.clear');
+    if (hotspotMode) {
+      const blocked = networkAction || network.busy || Boolean(busyAction) || Boolean(remoteAction) || hasRunningService(state.service) ||
+        ['checking','sending','verifying','uploading','installing','y2jbUploading','y2jbVerifying','y2jbPublishing'].includes(state.remoteTask?.phase) ||
+        Object.values(state.components || {}).some(c => c.phase === 'downloading') || state.download?.phase === 'downloading';
+      $('#network-mode').value = 'hotspot';
+      $('#network-mode').disabled = Boolean(blocked || hotspotActive);
+      const credentialsValid = /^[A-Za-z0-9][A-Za-z0-9 _-]{0,31}$/.test($('#hotspot-ssid').value) &&
+        /^[\x21-\x7e]{8,63}$/.test($('#hotspot-password').value);
+      for (const id of ['hotspot-ssid','hotspot-password']) $(`#${id}`).disabled = Boolean(blocked || hotspotActive);
+      $('#network-apply').disabled = Boolean(blocked || hotspotActive || !hotspot.supported ||
+        (network.managed && network.managed.bootId === network.bootId) || !credentialsValid);
+      $('#network-clear').disabled = Boolean(blocked || (!hotspotActive && hotspot.phase !== 'failed'));
+      $('#network-refresh').disabled = Boolean(networkAction || network.busy);
+      $('#network-mode-help').textContent = t(hotspot.supported ? 'hotspot.help' : 'hotspot.unsupported');
+      $('#network-original').textContent = hotspot.address ? t('hotspot.address', { address: hotspot.address }) : '';
+      $('#network-status').textContent = t(`hotspot.${hotspot.phase || 'stopped'}`);
+      const issue = networkFeedback || hotspot.error;
+      $('#network-error').hidden = !issue;
+      $('#network-error').textContent = issue ? asText(issue) : '';
+      $('#network-suggestion').hidden = true; $('#network-use-suggestion').hidden = true;
+      $('#network-ps5').hidden = !hotspotActive;
+      $('#network-ps5').textContent = t(hotspot.address ? 'hotspot.ps5' : 'hotspot.connectFirst', {
+        ssid: hotspot.ssid, address: hotspot.address, peer: hotspot.peer || t('hotspot.noPeer') });
+      return;
+    }
     const adapters = (network.adapters || []).filter(a => a.hardware);
     const managed = network.managed;
     if (!networkSelection.initialized && (adapters.length || managed)) {
@@ -317,11 +354,14 @@
     if (networkAction || !api) return;
     networkAction = true; networkFeedback = null; render();
     try {
-      const result = action === 'apply' ? await api.configureNetwork({ mode: networkSelection.mode, adapterId: networkSelection.adapterId, address: networkSelection.address.trim() }) :
+      const hotspotMode = networkSelection.mode === 'hotspot' && action !== 'refresh';
+      const result = hotspotMode ? (action === 'apply' ? await api.startHotspot({ ssid: $('#hotspot-ssid').value, password: $('#hotspot-password').value }) : await api.stopHotspot()) :
+        action === 'apply' ? await api.configureNetwork({ mode: networkSelection.mode, adapterId: networkSelection.adapterId, address: networkSelection.address.trim() }) :
         action === 'clear' ? await api.clearNetwork() : await api.refreshNetwork();
       if (result?.ok === false) throw result.error;
       if (action !== 'refresh') elements.interface.value = '';
       mergeState(result);
+      if (hotspotMode && action === 'clear') $('#hotspot-password').value = '';
     } catch (cause) { networkFeedback = cause?.key ? cause : i18n.serializeError(cause); }
     finally { networkAction = false; render(); }
   }
@@ -635,6 +675,7 @@
 
   elements.sourceUrl.addEventListener('input', () => { locallyEdited.add(elements.sourceUrl); render(); });
   $('#network-mode').addEventListener('change', () => { networkSelection.mode = $('#network-mode').value; networkFeedback = null; render(); });
+  for (const id of ['hotspot-ssid','hotspot-password']) $(`#${id}`).addEventListener('input', () => { networkFeedback = null; render(); });
   $('#network-adapter').addEventListener('change', () => { networkSelection.adapterId = $('#network-adapter').value; networkFeedback = null; render(); });
   $('#network-address').addEventListener('input', () => { networkSelection.address = $('#network-address').value; networkFeedback = null; render(); });
   $('#network-use-suggestion').addEventListener('click', () => {

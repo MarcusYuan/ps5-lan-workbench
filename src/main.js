@@ -22,6 +22,7 @@ const { getCertificate, validDomain } = require('./core/certificate');
 const { createController } = require('./service/controller');
 const { createConfigurator } = require('./network/configuration');
 const { createSystemDriver } = require('./network/system');
+const { validateOptions: validateHotspotOptions, privateAddress } = require('./network/hotspot');
 
 const helperIndex = process.argv.indexOf('--service-helper');
 if (helperIndex >= 0) {
@@ -53,6 +54,8 @@ if (helperIndex >= 0) {
   let networkBusy = false;
   let networkRefresh = null;
   let hostBusy = false;
+  let hotspotController;
+  let quitting = false;
   const componentAborts = new Map();
   let configData = null;
   let state = {
@@ -65,6 +68,7 @@ if (helperIndex >= 0) {
     pkgSelection: null, gameSelection: null, remoteTask: null,
     componentRuntime: { payloadManager: { phase: 'unchecked', target: '', error: null } },
     network: { supported: ['win32', 'darwin'].includes(process.platform), adapters: [], managed: null, busy: false, status: 'idle', error: null },
+    hotspot: { supported: process.platform === 'win32', phase: 'stopped', ssid: '', address: '', peer: '', error: null },
   };
   let configWrite = Promise.resolve();
 
@@ -165,8 +169,10 @@ if (helperIndex >= 0) {
     updateUrls();
   }
   function publicState() {
+    state.hotspot.active = Boolean(hotspotController);
     state.interfaces = interfaces();
-    if (!state.interfaces.some(item => item.address === state.selectedIp)) state.selectedIp = state.interfaces[0]?.address || '';
+    if (hotspotController) state.selectedIp = state.hotspot.address;
+    else if (!state.interfaces.some(item => item.address === state.selectedIp)) state.selectedIp = state.interfaces[0]?.address || '';
     updateUrls();
     return structuredClone(state);
   }
@@ -223,6 +229,7 @@ if (helperIndex >= 0) {
     if (abortController) throw error('DOWNLOAD_IN_PROGRESS', 'error.waitForDownload');
     if (!state.download.meta) throw error('DOWNLOAD_REQUIRED', 'error.downloadFirst');
     const ip = String(options?.interfaceAddress || state.selectedIp);
+    if (hotspotController && (!state.hotspot.address || ip !== state.hotspot.address)) throw error('HOTSPOT', 'hotspot.waitAddress');
     if (!interfaces().some(item => item.address === ip)) throw error('INVALID_INTERFACE', 'error.invalidInterface');
     const entryPath = validateEntryPath(String(options?.entryPath || state.entryPath));
     const domain = String(options?.targetDomain || state.targetDomain).trim().toLowerCase();
@@ -376,6 +383,7 @@ if (helperIndex >= 0) {
     return networkRefresh;
   }
   async function changeNetwork(action, options) {
+    if (hotspotController) throw error('HOTSPOT', 'hotspot.stopFirst');
     if (networkBusy || hostBusy || controller || remoteAbort || componentCheckBusy || abortController || componentAborts.size)
       throw error('NETWORK_BUSY', 'network.stopFirst');
     networkBusy = true;
@@ -405,6 +413,76 @@ if (helperIndex >= 0) {
       state.network.busy = false;
       publicState();
       emit();
+    }
+    return publicState();
+  }
+  async function changeHotspot(action, options) {
+    if (process.platform !== 'win32') throw error('HOTSPOT', 'hotspot.unsupported');
+    if (networkBusy || hostBusy || controller || remoteAbort || componentCheckBusy || abortController || componentAborts.size)
+      throw error('NETWORK_BUSY', 'network.stopFirst');
+    if (action === 'start' && hotspotController) return publicState();
+    if (action === 'start') validateHotspotOptions(options);
+    networkBusy = true;
+    state.network.busy = true;
+    state.hotspot.error = null;
+    state.hotspot.phase = action === 'start' ? 'starting' : 'stopping';
+    emit();
+    try {
+      await networkRefresh;
+      if (action === 'stop') {
+        await hotspotController?.stop();
+        hotspotController = null;
+        state.hotspot = { ...state.hotspot, phase: 'stopped', address: '', peer: '' };
+        state.selectedIp = '';
+      } else {
+        const snapshot = await networkConfigurator.inspect();
+        if (snapshot.managed && snapshot.managed.bootId === snapshot.bootId) throw error('NETWORK_CONFIG', 'network.clearFirst');
+        state.hotspot = { ...state.hotspot, ssid: options.ssid, address: '', peer: '' };
+        const pending = [];
+        let initialized = false;
+        const receive = event => {
+          if (!initialized) { pending.push(event); return; }
+          if (event.type === 'hotspotFailed') {
+            state.hotspot.phase = 'failed';
+            state.hotspot.error = i18n.message(event.key);
+            state.hotspot.address = ''; state.hotspot.peer = '';
+            state.selectedIp = '';
+            // Loss of the hotspot invalidates services and any in-flight peer operation.
+            remoteAbort?.abort();
+            void stopHost().catch(cause => { state.service.error = i18n.serializeError(cause); }).finally(emit);
+            if (event.key !== 'hotspot.stopFailed') {
+              const failed = hotspotController; hotspotController = null;
+              void failed?.stop().catch(cause => { state.hotspot.error = i18n.serializeError(cause); emit(); });
+            }
+          } else if (event.type === 'hotspotAddress') {
+            if (state.hotspot.address && event.address !== state.hotspot.address) {
+              remoteAbort?.abort();
+              void stopHost().catch(cause => { state.service.error = i18n.serializeError(cause); emit(); });
+            }
+            state.hotspot.address = event.address;
+            state.hotspot.phase = event.address ? 'ready' : 'started';
+            state.selectedIp = event.address;
+          } else if (event.type === 'hotspotPeer') {
+            if (privateAddress(event.peer)) state.hotspot.peer = event.peer;
+          } else if (event.type === 'hotspotPeerLeft') state.hotspot.peer = '';
+          else if (event.type === 'hotspotPeerError') state.hotspot.error = i18n.message('hotspot.peerError');
+          publicState(); emit();
+        };
+        hotspotController = await createController({ executable: process.execPath, appPath: app.getAppPath(), packaged: app.isPackaged,
+          config: { hotspotRequest: validateHotspotOptions(options), hotspotPorts: ports }, elevated: true, timeoutMs: 60000, stopTimeoutMs: 12000, confirmStop: true,
+          onEvent: event => receive(event.type === 'serviceExited' ? { type: 'hotspotFailed', key: 'hotspot.unexpectedStop' } : event) });
+        state.hotspot.phase = 'started';
+        state.selectedIp = '';
+        initialized = true;
+        pending.forEach(receive);
+      }
+    } catch (cause) {
+      state.hotspot.phase = 'failed';
+      state.hotspot.error = i18n.serializeError(cause);
+      throw cause;
+    } finally {
+      networkBusy = false; state.network.busy = false;
+      publicState(); emit();
     }
     return publicState();
   }
@@ -558,6 +636,8 @@ if (helperIndex >= 0) {
     ipcMain.handle('network:refresh', handle(refreshNetwork));
     ipcMain.handle('network:configure', handle((_event, options) => changeNetwork('apply', options)));
     ipcMain.handle('network:clear', handle(() => changeNetwork('clear')));
+    ipcMain.handle('hotspot:start', handle((_event, options) => changeHotspot('start', options)));
+    ipcMain.handle('hotspot:stop', handle(() => changeHotspot('stop')));
     ipcMain.handle('host:download', handle(startDownload));
     ipcMain.handle('host:cancelDownload', () => { abortController?.abort(); return publicState(); });
     const hostAction = action => handle(async (...args) => {
@@ -617,8 +697,19 @@ if (helperIndex >= 0) {
     window?.focus();
   });
   app.on('before-quit', event => {
+    if (quitting) { event.preventDefault(); return; }
     if (networkBusy) { event.preventDefault(); return; }
     if (remoteAbort && !allowClose) { event.preventDefault(); window?.close(); return; }
+    if (hotspotController) {
+      event.preventDefault(); quitting = true;
+      const active = hotspotController;
+      void Promise.all([controller?.stop(), active.stop()]).then(() => {
+        hotspotController = null; quitting = false; app.quit();
+      }).catch(cause => {
+        quitting = false; state.hotspot.error = i18n.serializeError(cause); emit();
+      });
+      return;
+    }
     abortController?.abort();
     for (const active of componentAborts.values()) active.abort();
     controller?.stop();

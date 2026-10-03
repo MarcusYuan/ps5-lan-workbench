@@ -4,6 +4,8 @@
 
 ## Automatic IP configuration and cleanup
 
+This section applies to single- and two-adapter modes. For mode 3, follow Windows local hotspot below and the README's hotspot steps instead of this fixed-IP procedure.
+
 “Connection mode and computer IP setup” offers single-adapter (shared router) and two-adapter (separate adapter wired to PS5) modes. Select a physical adapter and service IP, click “Configure IP automatically,” and complete system authorization. The default is `192.168.100.1/24`; another private IPv4 address ending in `.1` can be used. The mask is fixed at `255.255.255.0`, with `.2` suggested for PS5. Success selects the added address for local services. Enter the PS5 settings manually and save its address in the app.
 
 Single-adapter mode uses the connected internet adapter with an existing IPv4 address and default gateway, with the computer and PS5 on the same router. Disable AP/client isolation; guest networks and other policies may prevent communication. Two-adapter mode uses the adapter wired to PS5, without a default gateway. Set PS5 primary DNS and gateway to the computer's service IP for local connectivity only; this does not forward internet traffic. Existing computer addresses, DHCP, gateway and DNS are preserved.
@@ -20,34 +22,53 @@ Windows uses temporary DHCP/static-address coexistence. If the adapter already h
 
 Interrupted operations, canceled authorization and failed recovery retain the record. On the next launch, inspect the message and clear the app-added configuration before retrying. Changes to existing internet settings or unconfirmed results are not reported as success; check system network settings. Do not manually delete the record and repeatedly configure. Validation includes simulated commands and failure scenarios for both platforms, plus actual address addition and cleanup on Ethernet and Wi-Fi on one Windows computer. Tests used the application configuration module and helper process, verified local TCP communication through the added address and public HTTPS requests, and confirmed restoration of original IP, DHCP, gateway, DNS and coexistence settings after cleanup. An initially unaddressed direct-connect adapter, macOS hardware operation, expiration after reboot and PS5-side connectivity remain unverified.
 
-## Single- and two-adapter connection diagram
+## Three connection modes
 
-Start with [Connection and IP settings in the README](../README.en.md#connection-and-ip-settings). Both modes use “Configure IP automatically” while preserving the computer's internet configuration. The diagram shows both topologies and default parameters.
+Start with [Connection and IP settings in the README](../README.en.md#connection-and-ip-settings). Single- and two-adapter modes use Configure IP automatically; Windows local hotspot uses Start local hotspot and an assigned address. All three preserve existing computer internet settings. The diagram separates their topology, settings and shutdown instructions.
 
-![Single and two adapters: add a service IP, enter PS5 settings manually and clear app-added settings](assets/connection-modes.en.png)
+![Three modes: add a service IP with single or two adapters, or use Windows-assigned hotspot addressing](assets/connection-modes.en.png)
 
 - **Single adapter:** connect the computer and PS5 to the same router. The service IP is added to the computer's current internet adapter. PS5 can connect to that router by Wi-Fi or cable; client isolation may block local traffic.
 - **Two adapters:** keep one computer adapter connected to the internet and cable another Ethernet adapter directly to PS5. Add the service IP to the direct-connect adapter. The internet adapter stays unchanged; the computer-to-PS5 cable does not pass through a router.
-- **PS5 settings:** default IP `192.168.100.2`, mask `255.255.255.0`, and primary DNS and gateway both set to computer service IP `192.168.100.1`. Enter these console settings manually and save the same PS5 address in the app. Update these values together when changing the service subnet.
+- **Local hotspot:** Windows experimental only. A compatible adapter broadcasts Wi-Fi for PS5 to connect directly. Use automatic IP and primary DNS pointing to the actual hotspot address, then verify and save the assigned PS5 IP. No fixed service IP or internet sharing is added; closing the app stops the hotspot. PS5 association and client-side isolation remain unverified.
+- **PS5 settings for modes 1 and 2:** default IP `192.168.100.2`, mask `255.255.255.0`, and primary DNS and gateway both set to computer service IP `192.168.100.1`. Enter these console settings manually and save the same PS5 address in the app. Update these values together when changing the service subnet. This table does not apply to hotspots.
 
 Adding an IP does not share internet access. The app does not enable bridging or internet forwarding, change PS5 network settings or disable updates. Disable automatic system software downloads and installation on the console yourself. Configure temporary addresses again after a computer restart; clearing the computer's additions does not reset PS5 settings.
 
 Initial downloads need internet access on the computer. Cached pages, components and local files can use the LAN; external dependencies of pages or third-party components depend on those resources. The connection diagram above is Figure 1; [see Figure 2 for the complete seven-step workflow and each step's purpose](../README.en.md#seven-steps-from-setup-to-playing).
 
+## Windows local hotspot (experimental)
+
+Hotspot mode uses autonomous group owner and legacy access point settings on Windows `WiFiDirectAdvertisementPublisher`. It does not invoke Mobile hotspot or enable ICS/NAT. The restricted preload exposes start/stop only; both the main and helper processes validate credentials. Names accept 1–32 ASCII letters, digits, spaces, underscores or hyphens, starting with a letter or digit. Passwords accept 8–63 printable ASCII characters without spaces. Credentials travel through local IPC/stdin, never configuration files, logs or command arguments.
+
+The Windows helper compiles this project's native interface source with the built-in .NET Framework; no dependency download or installed SDK is required. Compatible Windows components, Wi-Fi hardware and drivers are needed. macOS retains the original two connection modes. Clear app-added IPs first; hotspot and added-IP configuration cannot be active together.
+
+Before broadcasting, a WFP dynamic session installs rules for currently unused Wi-Fi Direct candidate interfaces. A separate sublayer blocks IPv4/IPv6 forwarding by source interface without changing forwarding on other adapters, including Clash/Mihomo. Active Wi-Fi Direct connections, ICS sharing and bridges remain conservative conflicts. Missing candidate interfaces or failed rule installation prevent broadcasting. Interface identity, rule presence, sharing and bridges are checked approximately every two seconds and rules are checked before accepting peers. Failed checks or new/recreated interfaces stop the hotspot rather than expanding its scope automatically.
+
+New local connections arriving through the hotspot are denied by default. Exceptions match this app’s executable plus DNS TCP/UDP 53, HTTPS TCP 443 and HTTP TCP 8000 (actual configured ports in diagnostic mode), system svchost DHCP UDP 67→68, and necessary IPv6 neighbour discovery. Computer-initiated PS5 sessions rely on WFP state tracking; uploads and component management do not require opening all inbound ports. This restricts hotspot clients from using other programs’ HTTP/SOCKS proxies on the computer. Soft permits do not override Windows or third-party firewall blocks; local services may still require firewall permission.
+
+Shutdown releases the access point and peers before closing WFP. Dynamic rules are removed when the session or helper process ends, without persistent policy or changes to original adapter IP/gateway/DNS. Identity checks have an interval and cannot guarantee immediate isolation against administrator changes or third-party kernel drivers. Bridging that bypasses the IP forwarding layer and arbitrary VPN injection are unsupported. The DNS whitelist is not a substitute for interface isolation. References: [WFP layer conditions](https://learn.microsoft.com/en-us/windows/win32/fwp/filtering-conditions-available-at-each-filtering-layer), [dynamic session lifetimes](https://learn.microsoft.com/en-us/windows/win32/fwp/object-management).
+
+Broadcasting, obtaining a local address, accepting a peer, starting DNS/web services and actual PS5 execution are separate states. Use the private IPv4 assigned by Windows, not the adapter mode's `192.168.100.1`. If no address is available, connect PS5 with automatic IP first, wait for the computer address, then set primary DNS manually. Start local services separately; while the hotspot is active, services use only its address. An observed peer is not identified as PS5; verify its address on the console and save it manually. The target address is not overwritten automatically.
+
+Stopping the hotspot or exiting the app releases the owned access point and connections. Address changes or hotspot failure stop local services and cancel active remote operations. Unconfirmed shutdown is reported as a failure. Firewalls, occupied ports 53/443, sleep and wireless drivers can affect local access; inspect system messages. Disable PS5 updates yourself. Native compilation and automated tests do not verify hotspot hardware operation, PS5 connectivity or internet isolation.
+
+On one Windows computer with an RZ616 Wi-Fi adapter, validation covered native hotspot startup, an actual IPv4 address, local DNS queries on UDP 53, local HTTPS access on port 443, and shutdown. Original physical adapter IP/DNS/gateway/DHCP settings were preserved. The new implementation was tested while Mihomo IPv4 forwarding remained enabled: 22 dynamic WFP rules were installed and checked across two unused Wi-Fi Direct candidate interfaces, the hotspot obtained 192.168.137.1, local DNS/HTTPS checks passed, and shutdown completed with original physical adapter settings preserved. This verifies rule installation, hotspot lifetime and local services only; it does not verify actual traffic isolation from a hotspot client, PS5 association, Clash proxy operation, other adapters or macOS.
+
 ## Host a web page locally
 
-1. Configure either connection mode as described above. Select the computer's service IP in the app (default `192.168.100.1`).
+1. Configure your selected mode: choose the added service IP for modes 1 and 2 (default `192.168.100.1`), or use the automatically selected actual hotspot IP. Hotspot broadcasting and local service startup are separate operations.
 2. “File source” is prefilled with `https://github.com/ntfargo/Relapse-Exploit` on first launch or when the saved URL is empty. The default entry file is `index.html`; saved custom URLs and the source of downloaded content are retained. Check the selected repository's firmware compatibility; prefilling does not confirm PS5 hardware compatibility. You can use another public GitHub repository root URL or direct HTTPS ZIP URL and set the relative entry path inside the archive. A Release page URL is not a direct ZIP URL. Prefilling does not trigger a download.
 3. Click “Download and verify.” For a GitHub repository, the app resolves the default branch to an exact commit before downloading the archive. Files go into the app's user data directory. A failed or canceled download retains the previous usable files.
 4. Click “Start local services.” By default, the app listens on DNS UDP/TCP 53, HTTPS 443, and HTTP 8000. Grant any required system permission. An occupied port produces an error.
-5. Set PS5 primary DNS to `192.168.100.1`. Open Settings → Guide & Tips, Health & Safety, and Other Information → User's Guide, and follow the selected repository's web injection instructions. Menu names can vary with firmware or language. The HTTP URL is for computer or local network testing only.
+5. Set PS5 primary DNS to the current computer service IP (default `192.168.100.1` in modes 1 and 2; use the displayed hotspot address in mode 3). Avoid public secondary DNS. Open Settings → Guide & Tips, Health & Safety, and Other Information → User's Guide and follow the selected repository. Menu names can vary with firmware or language. The HTTP URL is for computer or local network testing only.
 6. Check “PS5 HTTPS access” and the activity log. A received request does not prove that the PS5 trusts the self signed certificate or that a page or third party program ran successfully.
 
 The app generates a self signed certificate with a SAN for the target domain and renews it when the domain changes or expiry approaches. It does not install the certificate as a system root.
 
 ## Components and local PKGs
 
-1. Enter and save the PS5 IPv4 address (default `192.168.100.2`) separately at the top of the app. Confirm that the ELF Loader available after injection accepts computer connections. Saving the address does not probe the console. The computer service IP (default `192.168.100.1`) hosts DNS and web services on the adapter selected in either mode. Update both devices' parameters if you change the subnet.
+1. Enter and save the actual PS5 IPv4 address separately (default `192.168.100.2` in modes 1 and 2; check the assigned address on the console in hotspot mode). Confirm that ELF Loader accepts computer connections after injection. Saving the address does not probe PS5. DNS/web services use either the added adapter IP or the actual hotspot IP. Recheck both addresses after changing subnets or restarting the hotspot.
 2. Under “Install components,” inspect the upstream source and download the component you need. The app verifies the pinned release asset's SHA-256 hash. Only when you click “Load on PS5” does it check the default port 9021 and send the ELF. Confirm WebKit Autoloader and Kstuff FPKG operation on the PS5; PKG Manager readiness is checked through its default port 8844.
 3. Payload Manager v0.5.2 can be checked and its management page opened without a local ELF download. The app checks its version and service response on port 8084. Loading skips the send when it is already running; after a send the app waits up to 30 seconds for confirmation. Payload Manager may execute an existing console autoload list. This app does not change that list.
 4. Under “Install a local PKG,” select or drop one `.pkg` from your computer and click “Install on PS5.” The app transfers it in segments through PKG Manager Direct Install. This needs no SMB share and does not depend on port 9021. Keep the computer and source file available until the PS5 reports an installation result.
@@ -122,7 +143,7 @@ The local management workflow does not require Garlic Worker, which serves an on
 
 | Area | Behavior |
 | --- | --- |
-| DNS | Only A queries for the target domain (default `manuals.playstation.net`) receive the selected computer IPv4 address. AAAA has no address; other domains return NXDOMAIN. Public DNS requests are not forwarded. |
+| DNS | Only a single IN-class question matching the configured domain exactly (default `manuals.playstation.net`) is answered: A receives the selected computer IPv4 and AAAA returns no address. Other domains and subdomains return NXDOMAIN, unsupported types/classes return REFUSED, and multiple questions return FORMERR. UDP/TCP use the same rules; queries are never forwarded to public DNS. Do not configure public secondary DNS on PS5. This whitelist does not replace network-level internet isolation. |
 | Web | HTTPS and HTTP serve the same downloaded files. `/document/<language>/ps5/` redirects to the selected entry file; missing files return 404. |
 | Internet requests | The app contacts upstream sources only for user initiated downloads. User provided pages or scripts may make their own external requests. |
 | PS5 connections | The app contacts the saved PS5 address when the user requests ELF delivery, PKG installation, game folder / image transfer, or a component status check. |
@@ -135,7 +156,9 @@ To check whether a page works offline, disconnect the computer from the internet
 | Symptom | Check |
 | --- | --- |
 | Services will not start | Check the selected interface, system permissions, and whether another DNS, proxy, or app occupies ports 53, 443, or 8000. |
-| The PS5 cannot open the page | Check the direct cable, or ensure the shared router permits communication between devices. Select the computer's service IP, set PS5 primary DNS to that address, and check the HTTPS log. Certificate and page behavior still need hardware confirmation. |
+| The PS5 cannot open the page | Check the cable or router client communication. In hotspot mode, confirm PS5 joins the correct Wi-Fi, obtains its IP automatically and uses the actual displayed hotspot IP as primary DNS. Start services separately and check the HTTPS log. Certificate and page behavior still need hardware confirmation. |
+| Hotspot cannot start or has no address | Check Windows, Wi-Fi hardware/driver support and authorization. Clear app-added IPs and stop existing Mobile hotspot, ICS sharing or bridges first. Follow isolation errors rather than bypassing rules manually. |
+| Hotspot fails with Clash enabled | Forwarding on other adapters alone no longer prevents startup. Check for sharing, bridges or occupied local service ports. Installed rules do not establish PS5 association or client-side proxy isolation. |
 | A download fails | Check the GitHub repository or direct HTTPS ZIP URL and the relative entry path. If using the mirror, turn it off and retry. |
 | ELF or PKG action fails | Check the saved PS5 IPv4 address, the relevant service on port 9021 or 8844, and the task log. |
 

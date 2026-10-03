@@ -68,3 +68,32 @@ test('helper startup error preserves its translation key through controller IPC'
     await fs.rm(temp, { recursive: true, force: true });
   }
 });
+
+test('confirmed shutdown reports a stuck helper and retains the ability to finish cleanup', async () => {
+  const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'ps5-controller-stop-'));
+  const appPath = path.join(temp, 'stuck-helper.js');
+  await fs.writeFile(appPath, `
+    const fs=require('node:fs'),net=require('node:net');
+    const ticket=JSON.parse(fs.readFileSync(process.argv[process.argv.indexOf('--service-helper')+1]));
+    const socket=net.connect(ticket.port,'127.0.0.1');
+    socket.on('connect',()=>socket.write(JSON.stringify({type:'hello',token:ticket.token})+'\\n'));
+    let buffer='';socket.on('data',chunk=>{buffer+=chunk;let index;
+      while((index=buffer.indexOf('\\n'))>=0){const message=JSON.parse(buffer.slice(0,index));buffer=buffer.slice(index+1);
+        if(message.type==='start')socket.write(JSON.stringify({type:'ready',result:{pid:process.pid}})+'\\n');
+      }
+    });
+  `);
+  let controller;
+  try {
+    controller = await createController({ executable: process.execPath, appPath, packaged: false,
+      config: {}, confirmStop: true, stopTimeoutMs: 30 });
+    await assert.rejects(controller.stop(), cause => cause.i18nKey === 'hotspot.stopFailed');
+  } finally {
+    if (controller) {
+      process.kill(controller.result.pid);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await controller.stop();
+    }
+    await fs.rm(temp, { recursive: true, force: true });
+  }
+});

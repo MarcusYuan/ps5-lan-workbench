@@ -17,7 +17,16 @@ async function runHelper(ticketPath) {
   const shutdown = async () => {
     if (closing) return;
     closing = true;
-    if (service) await service.stop().catch(() => {});
+    if (service) {
+      try { await service.stop(); }
+      catch (error) {
+        if (service.result?.ssid) {
+          closing = false;
+          send({ type: 'event', event: { type: 'hotspotFailed', key: 'hotspot.stopFailed' } });
+          return;
+        }
+      }
+    }
     socket.destroy();
     process.exit(0);
   };
@@ -34,6 +43,18 @@ async function runHelper(ticketPath) {
       if (message.type === 'start' && !started) {
         started = true;
         const config = message.config;
+        if (config?.hotspotRequest) {
+          const { startWindowsHotspot } = require('../network/hotspot');
+          startWindowsHotspot(config.hotspotRequest, { servicePorts: config.hotspotPorts,
+            onEvent: event => send({ type: 'event', event }) })
+            .then(result => {
+              service = result;
+              if (closing) return result.stop();
+              send({ type: 'ready', result: result.result });
+            })
+            .catch(error => { send({ type: 'error', error: serializeError(error) }); socket.end(); });
+          continue;
+        }
         if (config?.networkRequest) {
           const { executeChange } = require('../network/configuration');
           const { createSystemDriver } = require('../network/system');

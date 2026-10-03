@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('localHost', Object.freeze({
   refreshNetwork: () => ipcRenderer.invoke('network:refresh'),
   configureNetwork: options => ipcRenderer.invoke('network:configure', options),
   clearNetwork: () => ipcRenderer.invoke('network:clear'),
+  startHotspot: options => ipcRenderer.invoke('hotspot:start', options),
+  stopHotspot: () => ipcRenderer.invoke('hotspot:stop'),
   download: options => ipcRenderer.invoke('host:download', options),
   cancelDownload: () => ipcRenderer.invoke('host:cancelDownload'),
   start: options => ipcRenderer.invoke('host:start', options),

@@ -35,9 +35,13 @@
       <section class="card network-card" aria-labelledby="network-title">
         <h2 id="network-title" data-i18n="network.title">连接模式与电脑 IP 配置</h2>
         <div class="network-fields">
-          <div class="field"><label for="network-mode" data-i18n="network.mode">连接模式</label><select id="network-mode"><option value="single" data-i18n="network.single">单网卡 · 同一路由器</option><option value="dual" selected data-i18n="network.dual">双网卡 · 网线直连 PS5</option></select></div>
+          <div class="field"><label for="network-mode" data-i18n="network.mode">连接模式</label><select id="network-mode"><option value="single" data-i18n="network.single">单网卡 · 同一路由器</option><option value="dual" selected data-i18n="network.dual">双网卡 · 网线直连 PS5</option><option value="hotspot" data-i18n="hotspot.mode" disabled>本地热点 · Windows 实验功能</option></select></div>
           <div class="field"><label for="network-adapter" data-i18n="network.adapter">添加服务 IP 的网卡</label><select id="network-adapter" disabled></select></div>
           <div class="field"><label for="network-address" data-i18n="network.address">待添加的服务 IP（掩码 255.255.255.0）</label><input id="network-address" value="192.168.100.1" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <div id="hotspot-fields" class="network-fields" hidden>
+          <div class="field"><label for="hotspot-ssid" data-i18n="hotspot.ssid">热点名称</label><input id="hotspot-ssid" value="PS5 Local Host" maxlength="32" autocomplete="off"></div>
+          <div class="field"><label for="hotspot-password" data-i18n="hotspot.password">热点密码（8–63 个字符）</label><input id="hotspot-password" type="password" minlength="8" maxlength="63" autocomplete="new-password"></div>
         </div>
         <p id="network-mode-help" class="hint"></p>
         <p id="network-original" class="hint"></p>
@@ -47,7 +51,7 @@
         <p id="network-suggestion" class="hint" hidden></p>
         <button id="network-use-suggestion" class="secondary-button" type="button" hidden></button>
         <p id="network-ps5" class="hint"></p>
-        <p class="hint" data-i18n="network.lifetime">保留原联网配置。新增地址在本次开机期间有效，退出软件后仍保留；重启电脑后需重新配置。PS5 参数请手动填写。</p>
+        <p id="network-lifetime" class="hint" data-i18n="network.lifetime">保留原联网配置。新增地址在本次开机期间有效，退出软件后仍保留；重启电脑后需重新配置。PS5 参数请手动填写。</p>
       </section>
 
       <section class="target-bar card" aria-label="设备设置" data-i18n-aria-label="target.title">

@@ -8,11 +8,23 @@ function answerDns(message, domain, address, onEvent = () => {}) {
   if (query.type !== 'query' || !query.questions?.length) return null;
   const target = domain.toLowerCase().replace(/\.$/, '');
   const questions = query.questions;
-  const matched = questions.some(q => q.name.toLowerCase().replace(/\.$/, '') === target);
-  const answers = questions.filter(q => q.name.toLowerCase().replace(/\.$/, '') === target && q.type === 'A')
-    .map(q => ({ type: 'A', name: q.name, ttl: 60, data: address }));
-  for (const q of questions) onEvent({ type: 'dnsQuery', name: q.name, queryType: q.type, matched: q.name.toLowerCase().replace(/\.$/, '') === target });
-  return packet.encode({ type: 'response', id: query.id, flags: matched ? 0x8400 : 0x8403, questions, answers });
+  const matches = q => q.name.toLowerCase().replace(/\.$/, '') === target;
+  for (const q of questions) onEvent({ type: 'dnsQuery', name: q.name, queryType: q.type, matched: matches(q) });
+  // A single exact IN question is supported. Never partially answer a mixed request.
+  const question = questions[0];
+  let flags;
+  let answers = [];
+  if (query.flags & 0x7800) flags = 0x8004; // NOTIMP: no update/other DNS operations.
+  else if (questions.length !== 1) flags = 0x8001; // FORMERR
+  else if (!matches(question)) flags = 0x8403; // NXDOMAIN, including subdomains.
+  else if (question.class !== 'IN' || !['A', 'AAAA'].includes(question.type)) flags = 0x8005; // REFUSED
+  else {
+    flags = 0x8400;
+    if (question.type === 'A') answers = [{ type: 'A', name: question.name, ttl: 60, data: address }];
+    // Empty AAAA keeps clients on the local IPv4 service; no external fallback here.
+  }
+  // Echo recursion desired, but never advertise recursion available or forward queries.
+  return packet.encode({ type: 'response', id: query.id, flags: flags | (query.flags & 0x0100), questions, answers });
 }
 
 async function startDns({ address, domain, port = 53, onEvent = () => {} }) {
