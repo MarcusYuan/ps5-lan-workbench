@@ -17,7 +17,7 @@ async function cacheFixture(t) {
   return dir;
 }
 
-for (const id of ['shadowMountPlus', 'shadowMountPlusBeta3']) {
+for (const id of ['shadowMountPlus', 'shadowMountPlusBeta3', 'garlicSaveMgr']) {
   for (const route of ['direct', 'mirror']) {
     test(`${id} rejects corrupted ELF via ${route} without replacing the cache`, async t => {
       const dir = await cacheFixture(t);
@@ -31,7 +31,7 @@ for (const id of ['shadowMountPlus', 'shadowMountPlusBeta3']) {
         downloadRoute: route,
         fetchImpl: async url => { requested = url; return new Response(corrupt); },
       }), /checksum mismatch/);
-      assert.ok(requested.endsWith(`/releases/download/${component(id).version}/shadowmountplus.elf`));
+      assert.ok(requested.endsWith(`/releases/download/${component(id).version}/${component(id).asset}`));
       assert.equal(requested.startsWith('https://gh-proxy.org/'), route === 'mirror');
       assert.deepEqual(await fs.readFile(file), prior);
       assert.deepEqual(await fs.readdir(dir), [`${id}.elf`]);

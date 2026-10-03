@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { prepare, executeChange, createConfigurator, validateOptions } = require('../src/network/configuration');
 const { createSystemDriver, parseCoexistence, parseMacInterfaces } = require('../src/network/system');
+const { selectionIssue, suggestAddress } = require('../src/network/planning');
 
 const options = { mode: 'single', adapterId: 'wifi', address: '192.168.100.1' };
 function snapshot() {
@@ -61,7 +62,7 @@ test('validation rejects internet adapter in direct mode, disconnected or virtua
   for (const mutation of [a => a.connected = false, a => a.hardware = false]) {
     const state = snapshot(); mutation(state.adapters[0]); assert.throws(() => prepare(state, options));
   }
-  for (const address of ['8.8.8.1', '127.0.0.1', '192.168.100.2', '192.168.100.1;whoami', '192.168.999.1'])
+  for (const address of ['8.8.8.1', '127.0.0.1', '192.168.100.2', '192.168.100.1;whoami', '192.168.999.1', '192.168.100.1\n', '192.168.010.1'])
     assert.throws(() => validateOptions({ ...options, address }));
   assert.throws(() => validateOptions({ ...options, mode: 'reset' }));
   const state = snapshot(); state.adapters[0].coexistence = null;
@@ -73,9 +74,66 @@ test('existing addresses are borrowed without ownership; overlapping adapters an
   state.adapters[0].addresses.push({ address: options.address, prefix: 24 });
   assert.equal(prepare(state, options).existing, true);
   state.adapters[1].addresses.push({ address: '192.168.100.90', prefix: 24 });
-  assert.throws(() => prepare(state, options), e => e.i18nKey === 'network.conflict');
+  assert.throws(() => prepare(state, options), e => e.i18nKey === 'network.adapterConflict');
   const routed = snapshot(); routed.routes.push({ adapterId: 'vpn', address: '192.168.0.0', prefix: 16 });
-  assert.throws(() => prepare(routed, options), e => e.i18nKey === 'network.conflict');
+  assert.throws(() => prepare(routed, options), e => e.i18nKey === 'network.routeConflict');
+});
+
+test('single cleanup followed by dual configuration suggests a separate subnet without changing the original /8', async t => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'ps5-network-switch-'));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  const initial = snapshot();
+  initial.adapters[0].addresses[0] = { address: '192.168.3.102', prefix: 8, origin: 'Dhcp', state: 'Preferred', skipAsSource: false };
+  initial.adapters[0].gateways = initial.adapters[0].dns = ['192.168.3.250'];
+  initial.defaults = ['1:192.168.3.250:0'];
+  initial.routes = [{ adapterId: 'wifi', address: '192.0.0.0', prefix: 8 }];
+  const original = structuredClone(initial);
+  const f = mock(initial);
+  const app = createConfigurator({ file: path.join(dir, 'network-config.json'), read: f.driver.read,
+    mutate: request => executeChange(request, f.driver) });
+  await app.change('apply', options);
+  await app.change('clear');
+  assert.deepEqual(f.state, original);
+  assert.equal((await app.inspect()).managed, null);
+  const dual = { ...options, mode: 'dual', adapterId: 'cable' };
+  await assert.rejects(app.change('apply', dual), e => e.i18nKey === 'network.adapterConflict' &&
+    e.i18nParams.adapter === 'Wi-Fi' && e.i18nParams.current === '192.168.3.102/8');
+  assert.equal((await app.inspect()).managed, null, 'preflight failure does not create a cleanup record');
+  const address = suggestAddress(f.state, dual);
+  assert.equal(address, '172.31.253.1');
+  assert.equal(selectionIssue(f.state, { ...dual, address }), null);
+  await app.change('apply', { ...dual, address });
+  assert.deepEqual(f.state.adapters[0], original.adapters[0]);
+  assert.equal(f.state.adapters[1].addresses[0].address, address);
+  await app.change('clear');
+  assert.deepEqual(f.state, original);
+  assert.equal((await app.change('apply', options)).status, 'configured', 'switching back to single can reuse the default');
+  await app.change('clear');
+  assert.deepEqual(f.state, original);
+});
+
+test('suggestions respect VPN routes, mode eligibility and existing addresses', async () => {
+  const state = snapshot();
+  state.adapters[0].addresses[0].prefix = 8;
+  const dual = { ...options, mode: 'dual', adapterId: 'cable' };
+  state.routes = [{ adapterId: 'vpn', address: '172.16.0.0', prefix: 12 }];
+  assert.equal(suggestAddress(state, dual), '10.253.253.1');
+  const routed = { ...options, address: '172.31.253.1' };
+  assert.deepEqual(selectionIssue(state, routed), { key: 'network.routeConflict',
+    params: { address: '172.31.253.1', route: '172.16.0.0/12', adapter: 'vpn' } });
+  assert.equal(suggestAddress(state, { ...dual, mode: 'single' }), null, 'a different IP cannot fix selecting the wrong adapter');
+  assert.equal(suggestAddress(state, { ...dual, address: '8.8.8.1' }), null);
+  state.routes.push({ adapterId: 'vpn', address: '10.0.0.0', prefix: 8 });
+  assert.equal(suggestAddress(state, dual), null, 'no suggestion when all candidates overlap');
+  state.routes = [];
+  state.adapters[1].addresses.push({ address: '172.31.253.1', prefix: 24, origin: 'Manual', state: 'Preferred' });
+  assert.equal(suggestAddress(state, dual), '10.253.253.1', 'a suggestion must not borrow somebody else’s address');
+  const f = mock();
+  const safe = { ...dual, address: '172.31.253.1' };
+  const record = prepare(f.state, safe);
+  f.state.routes.push({ adapterId: 'vpn', address: '172.16.0.0', prefix: 12 });
+  await assert.rejects(executeChange({ action: 'apply', record }, f.driver), e => e.i18nKey === 'network.routeConflict');
+  assert.deepEqual(f.calls, [], 'the helper rechecks routes after preview and before any mutation');
 });
 
 test('a changed adapter or address appearing while authorization is pending prevents mutation', async () => {

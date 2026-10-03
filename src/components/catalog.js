@@ -1,6 +1,13 @@
 'use strict';
 
 const CATALOG = Object.freeze({
+  garlicSaveMgr: Object.freeze({
+    id: 'garlicSaveMgr', name: 'Garlic SaveMgr', version: 'v1.7', verification: 'sent',
+    source: 'https://github.com/earthonion/garlic-savemgr',
+    release: 'https://github.com/earthonion/garlic-savemgr/releases/tag/v1.7',
+    asset: 'garlic-savemgr.elf', size: 1497744,
+    sha256: '124051ab3a762474720ae53187d2920bc96d6be1d69aa298e715667efc385a2f',
+  }),
   y2jb: Object.freeze({
     id: 'y2jb', name: 'Y2JB Autoloader', version: 'v0.9.1', format: 'dat', verification: 'ftp',
     source: 'https://github.com/itsPLK/ps5-y2jb-autoloader',

@@ -1,6 +1,7 @@
 (() => {
   const api = window.localHost;
   const i18n = window.AppI18n;
+  const networkPlanning = window.NetworkPlanning;
   const $ = (selector) => document.querySelector(selector);
   let locale = i18n.resolveLocale('system', navigator.language);
   const t = (key, params) => i18n.t(locale, key, params);
@@ -288,13 +289,28 @@
     else if (['existing', 'cleared', 'expired'].includes(network.status)) status = t(`network.${network.status}`);
     if (networkAction || network.busy) status = t('network.working');
     $('#network-status').textContent = status;
-    const issue = networkFeedback || network.error || (network.supported === false ? i18n.message('network.unsupported') : null);
+    const selection = { mode: networkSelection.mode, adapterId: networkSelection.adapterId, address: networkSelection.address.trim() };
+    const editable = !managed || expired;
+    const previewIssue = editable && adapter && network.supported ? networkPlanning.selectionIssue(network, selection) : null;
+    // A failed attempt belongs to its submitted selection, not to the next mode/address the user chooses.
+    const relevantError = !network.errorOptions || Object.keys(selection).every(key => selection[key] === network.errorOptions[key]);
+    const issue = networkFeedback || previewIssue || (relevantError ? network.error : null) ||
+      (network.supported === false ? i18n.message('network.unsupported') : null);
     $('#network-error').hidden = !issue;
     $('#network-error').textContent = issue ? asText(issue) : '';
-    const validAddress = /^(10\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+|192\.168\.\d+)\.1$/.test(networkSelection.address) &&
-      networkSelection.address.split('.').every(n => Number(n) <= 255);
-    if (!validAddress) $('#network-apply').disabled = true;
-    $('#network-ps5').textContent = validAddress ? t('network.ps5', { address: networkSelection.address, ps5: networkSelection.address.replace(/\.1$/, '.2') }) : '';
+    const validAddress = !networkPlanning.invalidOptions(selection);
+    if (!validAddress || previewIssue) $('#network-apply').disabled = true;
+    const suggestion = previewIssue ? networkPlanning.suggestAddress(network, selection) : null;
+    $('#network-suggestion').hidden = !suggestion;
+    $('#network-suggestion').textContent = suggestion ? t('network.suggestion', { address: suggestion, ps5: suggestion.replace(/\.1$/, '.2') }) : '';
+    const suggestionButton = $('#network-use-suggestion');
+    suggestionButton.hidden = !suggestion;
+    suggestionButton.disabled = Boolean(blocked);
+    suggestionButton.dataset.address = suggestion || '';
+    suggestionButton.textContent = suggestion ? t('network.useSuggestion', { address: suggestion }) : '';
+    $('#network-ps5').hidden = !validAddress || Boolean(previewIssue);
+    $('#network-ps5').textContent = validAddress && !previewIssue ?
+      t('network.ps5', { address: selection.address, ps5: selection.address.replace(/\.1$/, '.2') }) : '';
   }
 
   async function runNetwork(action) {
@@ -528,6 +544,8 @@
         result.textContent = result.hidden ? '' : `${task.target.address} · ${task.label === 'y2jbDev' ? 'v1.0.0-dev-794049f' : 'v0.9.1'} · ${task.destination || ''} · ${t(`remote.${task.phase}`, { progress: Math.round(task.transferProgress ?? 0) })}${task.error ? ` ${asText(task.error)}` : ''}${task.backupPath ? ` ${t('y2jb.backup', { path: task.backupPath })}` : ''}${task.recoveryPath ? ` ${t('y2jb.recovery', { path: task.recoveryPath })}` : ''}`;
       }
       const runtime = card.querySelector('.component-runtime');
+      const openButton = card.querySelector('.component-open');
+      if (openButton) openButton.disabled = !target.address || targetEdited || Boolean(active) || Boolean(remoteAction);
       if (runtime) {
         const status = state.componentRuntime?.[id] || {};
         const current = status.target === target.address && !targetEdited ? status : { phase: 'unchecked' };
@@ -619,6 +637,14 @@
   $('#network-mode').addEventListener('change', () => { networkSelection.mode = $('#network-mode').value; networkFeedback = null; render(); });
   $('#network-adapter').addEventListener('change', () => { networkSelection.adapterId = $('#network-adapter').value; networkFeedback = null; render(); });
   $('#network-address').addEventListener('input', () => { networkSelection.address = $('#network-address').value; networkFeedback = null; render(); });
+  $('#network-use-suggestion').addEventListener('click', () => {
+    const address = $('#network-use-suggestion').dataset.address;
+    if (!address || $('#network-use-suggestion').disabled) return;
+    networkSelection.address = address;
+    $('#network-address').value = address;
+    networkFeedback = null;
+    render();
+  });
   $('#network-apply').addEventListener('click', () => runNetwork('apply'));
   $('#network-clear').addEventListener('click', () => runNetwork('clear'));
   $('#network-refresh').addEventListener('click', () => runNetwork('refresh'));

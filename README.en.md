@@ -23,6 +23,10 @@ Expand **Assets** on the download page and choose a package for your computer:
 
 ZIP packages are also available for macOS. **Source code contains the source files; choose an app package from the table.** Builds are unsigned and macOS builds are not notarized, so your system may block opening them.
 
+## Save management
+
+Under “Install components”, find **Garlic SaveMgr**, then click “Download” → “Load to PS5” → “Open save manager”. Jailbreak first and start a LAN-accessible ELF Loader. Export a backup in the web UI before editing or importing saves. [Detailed steps](guides/usage.en.md#garlic-savemgr-save-management)
+
 ## Connection and IP settings
 
 **Starting with v0.8.0, the app can add a service IP to the selected adapter while preserving the computer's existing internet IP, DHCP, gateway and DNS.** Let the app configure the computer; enter the PS5 settings manually.
@@ -43,8 +47,8 @@ Single-adapter mode suits laptops with only one usable adapter: **the same adapt
 ### 2. Add the computer IP automatically
 
 1. Under **Connection mode and computer IP setup** at the top of the app, select the mode and adapter from the table above.
-2. Keep the default added service IP `192.168.100.1`, click **Configure IP automatically**, and complete Windows/macOS authorization. Stop local services and finish or cancel downloads and transfers first.
-3. Wait for the result. Confirm that **Computer network interface** below has selected `192.168.100.1`. Successful configuration selects this address for local DNS and web services automatically.
+2. **Service IP to add** defaults to `192.168.100.1`. If a subnet overlaps, check the named adapter or route and click **Use suggested IP** or enter another subnet. Click **Configure IP automatically** and complete Windows/macOS authorization. Stop local services and finish or cancel downloads and transfers first.
+3. Wait for the result. Confirm that **Computer network interface** below has selected the actual configured service IP. Successful configuration selects this address for local DNS and web services automatically.
 
 **Why:** the service IP supports local computer-to-PS5 communication, while the original address continues to serve the computer's internet connection. Automatic configuration does not require replacing the original IP in system adapter properties or disabling DHCP.
 
@@ -64,6 +68,8 @@ Back in the app, enter `192.168.100.2` under **PS5 IP** and click **Save PS5 add
 **Why:** the computer service IP and PS5 IP share a subnet, and PS5 primary DNS points to the computer's local service. This gateway is for local access; the app does not enable internet sharing or bridging and does not forward internet traffic to PS5.
 
 > **Subnet conflict?** These are defaults, not mandatory fixed addresses. Choose another unused private service IP ending in `.1`, then update PS5 IP, gateway and primary DNS as shown in the app. For example, service IP `172.31.253.1` pairs with PS5 IP `172.31.253.2`, gateway and primary DNS `172.31.253.1`, and mask `255.255.255.0`. This example must also pass the local conflict check.
+
+Before switching from single- to two-adapter mode, **Clear app-added configuration**, then select the adapter wired to PS5. The app identifies the overlapping adapter address or route and offers **Use suggested IP** when a candidate is available. Original internet addresses are preserved, and a broad mask may still overlap with the default service subnet. The input retains the address for your next configuration; check **Current addresses on this adapter** for actual addresses. Suggestions pass only the computer configuration checks; PS5 connectivity still needs verification.
 
 ### 4. Clear the configuration or use it again later
 

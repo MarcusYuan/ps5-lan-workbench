@@ -8,6 +8,10 @@
 
 Single-adapter mode uses the connected internet adapter with an existing IPv4 address and default gateway, with the computer and PS5 on the same router. Disable AP/client isolation; guest networks and other policies may prevent communication. Two-adapter mode uses the adapter wired to PS5, without a default gateway. Set PS5 primary DNS and gateway to the computer's service IP for local connectivity only; this does not forward internet traffic. Existing computer addresses, DHCP, gateway and DNS are preserved.
 
+Clear the app-added configuration before switching modes, then select the new mode and adapter. The interface and configuration helper share preflight checks: they identify the overlapping adapter, original address and prefix, or route and its interface. **Use suggested IP** is offered when a candidate subnet passes the computer checks. Clicking it fills the input only; click **Configure IP automatically** to apply it, manually update PS5 IP, gateway and primary DNS using the revised hint, and save the PS5 address in the app. The helper checks the live network again after authorization. Suggestions do not guarantee that the LAN address is unused or PS5 is reachable.
+
+For example, an original WLAN address of `192.168.3.102/8` covers `192.168.100.x`. Clearing the single-adapter `.100.1` addition preserves that original `/8`, so adding `.100.1` to another adapter still overlaps. Use a checked alternative such as `172.31.253.1/24`. Preserve the original internet mask rather than deleting original addresses or changing routes to bypass the overlap. Errors from a previous configuration input are not applied to a newly selected mode, adapter or IP.
+
 Stop local services, downloads, transfers and remote tasks before changes. The app checks actual adapters, addresses and overlapping subnets on other adapters and Windows routes. Windows duplicate-address detection is also checked. These checks cannot guarantee an unused address or unrestricted LAN access; hardware verification is still required. A pre-existing matching address is used without claiming ownership. If an adapter or route has an overlapping subnet, including a broader mask, choose a different private subnet and adjust PS5 settings accordingly.
 
 Windows uses temporary DHCP/static-address coexistence. If the adapter already has a usable address, the added address skips automatic source selection to preserve normal internet source selection. An otherwise unaddressed direct-connect adapter can use the added address for outbound connections. If coexistence cannot be verified, configuration stops. macOS uses a temporary IPv4 alias. Added addresses and app-modified coexistence settings last for the current boot only. Closing the app retains them; configure again after restarting the computer.
@@ -98,6 +102,17 @@ The upstream management API defaults to PS5 loopback `127.0.0.1:10101`. This app
 4. Files are staged under `/data/.ps5-local-host-<task-id>/`. After checking each remote file size, the app renames the completed folder or image into `/data/homebrew/<selected-name>`. Existing destinations are rejected; do not modify the destination with other tools during transfer. Size checking is not a content hash check. Source file changes stop the task.
 5. Progress and cancellation appear in the task area. After failure or cancellation, the app attempts to remove only this task's temporary files; technical details record the staging path when cleanup fails. A lost connection during the final rename produces an unconfirmed result that needs checking on PS5. Resume, overwrite updates, storage destination selection and image creation are not available yet.
 6. Follow the [image loading steps](#shadowmountplus-image-loading) to confirm ShadowMountPlus scanning, registration and startup on PS5. You can explicitly download and send it under “Install components”; the app does not do so automatically or verify console mount results. Firmware 13.00 and individual game compatibility still require hardware testing.
+
+### Garlic SaveMgr save management
+
+The app downloads and sends the ELF from [GitHub release v1.7](https://github.com/earthonion/garlic-savemgr/releases/tag/v1.7). Pinned size and SHA-256 were checked against GitHub asset metadata. The existing GitHub mirror option applies; the ELF is not bundled. This version refers to the GitHub Release, not the latest version on other branches or publishing sites.
+
+1. Jailbreak the PS5 and start a LAN-accessible ELF Loader. Save the correct PS5 IPv4 address and ELF port (default 9021).
+2. Find Garlic SaveMgr under “Install components”, explicitly click “Download”, then “Load to PS5” after verification. Sending the ELF does not confirm service startup.
+3. Click “Open save manager” to open the saved PS5 address on fixed port 8082 in the system browser, for example `http://192.168.1.100:8082/`. You can also enter the URL manually. Opening it does not check service identity or health. If unreachable, check the address, LAN access and console startup result.
+4. In the upstream web UI, select a user and game, export a backup, then browse, edit or import as needed. The third-party program on PS5 processes saves; this app does not read or modify save contents, verify backup recoverability, or confirm that a game accepts edited saves.
+
+The local management workflow does not require Garlic Worker, which serves an online save-processing service and is not integrated here. Firmware compatibility (including 13.60), backup, restore and resign behavior await hardware testing. [Upstream usage](https://github.com/earthonion/garlic-savemgr#usage)
 
 ### GitHub mirror
 

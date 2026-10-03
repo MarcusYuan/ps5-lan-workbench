@@ -1,6 +1,6 @@
 {
   "name": "ps5-local-host",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "description": "Local DNS and HTTPS host for user supplied web files",
   "main": "src/main.js",

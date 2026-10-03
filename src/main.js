@@ -365,8 +365,11 @@ if (helperIndex >= 0) {
     if (!networkRefresh) networkRefresh = (async () => {
       try {
         const snapshot = await networkConfigurator.inspect();
-        state.network = { ...state.network, ...snapshot, error: null, supported: true };
-      } catch (cause) { state.network.error = i18n.serializeError(cause); }
+        state.network = { ...state.network, ...snapshot, error: null, errorOptions: null, supported: true };
+      } catch (cause) {
+        state.network.error = i18n.serializeError(cause);
+        state.network.errorOptions = null;
+      }
       emit();
       return publicState();
     })().finally(() => { networkRefresh = null; });
@@ -378,6 +381,7 @@ if (helperIndex >= 0) {
     networkBusy = true;
     state.network.busy = true;
     state.network.error = null;
+    state.network.errorOptions = null;
     emit();
     try {
       // Finish an earlier read before mutating so a stale snapshot cannot replace the result.
@@ -391,6 +395,8 @@ if (helperIndex >= 0) {
     } catch (cause) {
       state.network.status = 'failed';
       state.network.error = i18n.serializeError(cause);
+      state.network.errorOptions = action === 'apply' && options ?
+        { mode: options.mode, adapterId: options.adapterId, address: options.address } : null;
       throw cause;
     } finally {
       try { Object.assign(state.network, await networkConfigurator.inspect()); }
@@ -404,11 +410,15 @@ if (helperIndex >= 0) {
   }
   async function openComponentUi(_event, id) {
     if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
-    if (id !== 'payloadManager') throw error('UNSUPPORTED_COMPONENT_CHECK', 'remote.checkUnsupported');
+    if (!['payloadManager', 'garlicSaveMgr'].includes(id)) throw error('UNSUPPORTED_COMPONENT_CHECK', 'remote.checkUnsupported');
     if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
     const target = normalizeTarget(state.ps5Target);
     componentCheckBusy = true;
     try {
+      if (id === 'garlicSaveMgr') {
+        await shell.openExternal(`http://${target.address}:8082/`);
+        return publicState();
+      }
       try {
         await payloadManager.identify(target);
         setPayloadManagerRuntime('running', target);

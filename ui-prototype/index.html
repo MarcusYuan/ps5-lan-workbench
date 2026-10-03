@@ -37,13 +37,15 @@
         <div class="network-fields">
           <div class="field"><label for="network-mode" data-i18n="network.mode">连接模式</label><select id="network-mode"><option value="single" data-i18n="network.single">单网卡 · 同一路由器</option><option value="dual" selected data-i18n="network.dual">双网卡 · 网线直连 PS5</option></select></div>
           <div class="field"><label for="network-adapter" data-i18n="network.adapter">添加服务 IP 的网卡</label><select id="network-adapter" disabled></select></div>
-          <div class="field"><label for="network-address" data-i18n="network.address">新增服务 IP（掩码 255.255.255.0）</label><input id="network-address" value="192.168.100.1" inputmode="decimal" autocomplete="off"></div>
+          <div class="field"><label for="network-address" data-i18n="network.address">待添加的服务 IP（掩码 255.255.255.0）</label><input id="network-address" value="192.168.100.1" inputmode="decimal" autocomplete="off"></div>
         </div>
         <p id="network-mode-help" class="hint"></p>
         <p id="network-original" class="hint"></p>
         <div class="network-actions"><button id="network-apply" class="primary-button" type="button" disabled data-i18n="network.apply">自动配置 IP</button><button id="network-clear" class="secondary-button" type="button" disabled data-i18n="network.clear">清除本工具配置</button><button id="network-refresh" class="secondary-button" type="button" data-i18n="network.refresh">刷新网卡</button></div>
         <p id="network-status" class="hint" role="status" aria-live="polite"></p>
         <p id="network-error" class="field-message error" role="alert" hidden></p>
+        <p id="network-suggestion" class="hint" hidden></p>
+        <button id="network-use-suggestion" class="secondary-button" type="button" hidden></button>
         <p id="network-ps5" class="hint"></p>
         <p class="hint" data-i18n="network.lifetime">保留原联网配置。新增地址在本次开机期间有效，退出软件后仍保留；重启电脑后需重新配置。PS5 参数请手动填写。</p>
       </section>
@@ -154,6 +156,12 @@
             <article class="component-card" data-component="shadowMountPlus"><div class="component-info"><h4>ShadowMountPlus</h4><p class="component-annotation" data-i18n="components.shadowMountAnnotation">用途：扫描文件夹和镜像，注册主页入口，并在启动时挂载内容；先确认兼容的 Kstuff。</p><p data-i18n="components.shadowMountDescription">扫描并注册 /data/homebrew/ 下的镜像和游戏目录。发送后请在 PS5 确认启动与扫描结果。</p><label class="component-choice-label" for="shadowmount-version" data-i18n="components.shadowMountVersion">ShadowMountPlus 版本</label><select id="shadowmount-version" class="component-choice"><option data-version="1.7beta2" value="shadowMountPlus" data-i18n="components.shadowMountBeta2">1.7beta2（默认）</option><option data-version="1.7beta3" value="shadowMountPlusBeta3" data-i18n="components.shadowMountBeta3">1.7beta3（预发布）</option></select><p data-i18n="components.shadowMountVersionHint">可保留 beta2 或试用 beta3，各自独立下载。加载任一版本前先关闭游戏，并在 PS5 确认启动。beta3 游戏运行尚未验证，此更新未确认能解决启动黑屏。</p><button class="link-button component-source" type="button" data-i18n="components.source">查看上游项目</button></div><div class="component-version">1.7beta2</div><div class="component-state"><span class="component-status" data-i18n="components.notDownloaded">未下载</span><progress max="100" value="0"></progress></div><div class="component-actions"><button type="button" class="secondary-button component-download" data-i18n="components.download">下载</button><button type="button" class="primary-button component-load" data-i18n="components.load">加载到 PS5</button></div></article>
           </div>
         </section>
+        <section class="component-group" aria-labelledby="component-category-saves">
+          <h3 id="component-category-saves" class="component-category" data-i18n="components.categorySaves">存档管理</h3>
+          <div class="component-list">
+            <article class="component-card" data-component="garlicSaveMgr"><div class="component-info"><h4>Garlic SaveMgr</h4><p class="component-annotation" data-i18n="components.garlicAnnotation">用途：通过浏览器导出、导入、浏览和编辑 PS5 上的存档。</p><p data-i18n="components.garlicDescription">先破解并启动局域网 ELF Loader；发送后打开 8082 存档管理页面。先备份再修改或导入。13.60 兼容性待实机验证。</p><button class="link-button component-source" type="button" data-i18n="components.source">查看上游项目</button></div><div class="component-version">v1.7</div><div class="component-state"><span class="component-status" data-i18n="components.notDownloaded">未下载</span><progress max="100" value="0"></progress></div><div class="component-actions"><button type="button" class="secondary-button component-download" data-i18n="components.download">下载</button><button type="button" class="primary-button component-load" data-i18n="components.load">加载到 PS5</button><button type="button" class="secondary-button component-open" data-i18n="components.garlicOpen">打开存档管理页面</button></div></article>
+          </div>
+        </section>
         <section class="component-group" aria-labelledby="component-category-runtime">
           <h3 id="component-category-runtime" class="component-category" data-i18n="components.categoryRuntime">游戏运行支持</h3>
           <div class="component-list">
@@ -218,6 +226,7 @@
     <footer class="app-footer" data-i18n="footer.text">Local Host · 服务仅供本地网络测试</footer>
   </div>
   <script src="../src/i18n/index.js"></script>
+  <script src="../src/network/planning.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

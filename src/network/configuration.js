@@ -1,27 +1,16 @@
 'use strict';
 
 const fs = require('node:fs/promises');
-const { isIPv4 } = require('node:net');
 const { createError } = require('../i18n');
+const { invalidOptions, overlaps, selectionIssue } = require('./planning');
 
 const fail = (key, detail) => createError('NETWORK_CONFIG', `network.${key}`, {}, detail);
 const sort = values => [...values].sort();
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const usable = a => !a.address.startsWith('169.254.');
-const number = ip => ip.split('.').reduce((value, octet) => (value * 256 + Number(octet)) >>> 0, 0);
-function overlaps(address, other, prefix) {
-  if (!isIPv4(other) || !Number.isInteger(prefix) || prefix < 1 || prefix > 32) return false;
-  const bits = Math.min(24, prefix);
-  const mask = (0xffffffff << (32 - bits)) >>> 0;
-  return (number(address) & mask) === (number(other) & mask);
-}
 
 function validateOptions(value) {
-  if (!value || !['single', 'dual'].includes(value.mode) || typeof value.adapterId !== 'string' ||
-      value.adapterId.length > 100 || !isIPv4(value.address || '')) throw fail('invalid');
-  const octets = value.address.split('.').map(Number);
-  if (octets[3] !== 1 || !(octets[0] === 10 || (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
-      (octets[0] === 192 && octets[1] === 168))) throw fail('invalid');
+  if (invalidOptions(value)) throw fail('invalid');
   return { mode: value.mode, adapterId: value.adapterId, address: value.address };
 }
 
@@ -37,22 +26,13 @@ function preserved(before, snapshot, adapter, address) {
 
 function prepare(snapshot, value) {
   const options = validateOptions(value);
+  const issue = selectionIssue(snapshot, options);
+  if (issue) throw createError('NETWORK_CONFIG', issue.key, issue.params);
   const adapter = snapshot.adapters.find(a => a.id === options.adapterId);
-  if (!adapter?.hardware || !adapter.connected) throw fail('adapterUnavailable');
-  if (options.mode === 'single' && (!adapter.addresses.some(usable) || !adapter.gateways.length)) throw fail('singleNeedsInternet');
-  if (options.mode === 'dual' && adapter.gateways.length) throw fail('dualHasGateway');
-  for (const other of snapshot.adapters) {
-    if (other.id !== adapter.id && other.addresses.some(a => overlaps(options.address, a.address, a.prefix))) throw fail('conflict');
-  }
-  for (const route of snapshot.routes || []) {
-    if (route.adapterId !== adapter.id && route.prefix >= 8 && overlaps(options.address, route.address, route.prefix)) throw fail('conflict');
-  }
   const existing = adapter.addresses.find(a => a.address === options.address);
   if (existing) {
-    if (existing.prefix !== 24 || existing.state === 'Duplicate') throw fail('conflict');
     return { ...options, existing: true };
   }
-  if (snapshot.platform === 'win32' && adapter.dhcp && typeof adapter.coexistence !== 'boolean') throw fail('unsupportedCoexistence');
   return { ...options, version: 1, bootId: snapshot.bootId, before: protection(snapshot, adapter),
     coexistence: adapter.coexistence, phase: 'pending' };
 }
