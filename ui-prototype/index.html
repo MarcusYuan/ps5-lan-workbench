@@ -59,6 +59,12 @@
         <div class="target-computer"><span data-i18n="target.computerIp">本机 IP</span> <strong id="computer-ip">—</strong></div>
         <div class="field"><label for="ps5-ip" data-i18n="target.ps5Ip">PS5 IP</label><input id="ps5-ip" type="text" inputmode="decimal" autocomplete="off" placeholder="192.168.100.2"></div>
         <button id="save-ps5-target" class="secondary-button" type="button" data-i18n="target.save">保存 PS5 地址</button>
+        <div id="hotspot-device-picker" class="hotspot-device-picker" hidden>
+          <button id="hotspot-devices-refresh" class="secondary-button" type="button" data-i18n="hotspot.devicesRefresh">查看已连接设备</button>
+          <div class="field"><label for="hotspot-devices" data-i18n="hotspot.devices">选择要作为 PS5 的设备 IP</label><select id="hotspot-devices"></select></div>
+          <button id="hotspot-device-use" class="secondary-button" type="button" data-i18n="hotspot.deviceUse">确认并设为 PS5</button>
+          <p id="hotspot-device-status" role="status" aria-live="polite"></p>
+        </div>
         <details class="target-ports"><summary data-i18n="target.ports">端口设置</summary><div class="target-port-fields"><div class="field"><label for="elf-port" data-i18n="target.elfPort">ELF 接收端口</label><input id="elf-port" type="number" min="1" max="65535" value="9021"></div><div class="field"><label for="manager-port" data-i18n="target.managerPort">PKG Manager 端口</label><input id="manager-port" type="number" min="1" max="65535" value="8844"></div></div></details>
         <p id="target-message" class="target-message" data-i18n="target.help">电脑和 PS5 需要处于同一局域网。保存地址不会检测设备。</p>
       </section>

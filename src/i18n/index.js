@@ -616,7 +616,7 @@
     'hotspot.stopping': 'Stopping hotspot and releasing connections…', 'hotspot.failed': 'Hotspot operation failed. Check the message below.',
     'hotspot.address': 'Computer hotspot IP: {address} (assigned by Windows).',
     'hotspot.connectFirst': 'Connect PS5 to Wi-Fi “{ssid}” with the password above. Use automatic IP first; wait for the computer hotspot IP.',
-    'hotspot.ps5': 'PS5: connect to “{ssid}”, use automatic IP and primary DNS {address}. Start local services on this IP. Observed peer IP: {peer}; verify it on PS5 and save it below. A peer connection does not confirm PS5 identity or execution.',
+    'hotspot.ps5': 'PS5: connect to “{ssid}”, use automatic IP and primary DNS {address}. Verify the actual PS5 IP, select it from connected devices below and confirm before starting services. A peer connection does not confirm PS5 identity or execution.',
     'hotspot.noPeer': 'not observed',
     'hotspot.invalid': 'Name: 1–32 ASCII letters, digits, spaces, _ or -, starting with a letter or digit. Password: 8–63 printable ASCII characters without spaces.',
     'hotspot.unsupported': 'Local hotspot is experimental on Windows only. Use a shared router or cable on macOS.',
@@ -644,7 +644,7 @@
     'hotspot.stopping': '正在停止热点并释放连接…', 'hotspot.failed': '热点操作失败，请查看下方提示。',
     'hotspot.address': '电脑热点 IP：{address}（由 Windows 分配）。',
     'hotspot.connectFirst': '让 PS5 连接 Wi-Fi“{ssid}”，使用上方填写的密码。先将 IP 设为自动，等待电脑热点 IP。',
-    'hotspot.ps5': 'PS5：连接“{ssid}”，IP 使用自动，主 DNS 设为 {address}；电脑本地服务使用此 IP。观察到的设备 IP：{peer}，请在 PS5 核对后保存到下方。设备连接不代表已确认 PS5 身份或执行成功。',
+    'hotspot.ps5': 'PS5：连接“{ssid}”，IP 使用自动，主 DNS 设为 {address}。请在主机核对实际 IP，从下方已连接设备中选择并确认，再启动服务。设备连接不代表已确认 PS5 身份或执行成功。',
     'hotspot.noPeer': '尚未观察到',
     'hotspot.invalid': '名称为 1–32 个英文字母、数字、空格、下划线或连字符，以字母或数字开头；密码为 8–63 个不含空格的 ASCII 可打印字符。',
     'hotspot.unsupported': '本地热点目前仅为 Windows 实验功能；macOS 请使用同一路由器或网线直连。',
@@ -659,6 +659,24 @@
     'hotspot.stopFirst': '请先停止本地服务和热点，再修改网卡 IP 配置。',
     'hotspot.waitAddress': '请等待热点 IPv4 地址，再使用该地址启动本地服务。',
     'hotspot.peerError': '未能接受无线设备连接，请检查 PS5 的 Wi-Fi 设置后重试。',
+  });
+  Object.assign(en, {
+    'hotspot.devicesRefresh': 'View connected devices', 'hotspot.devices': 'Choose the device IP to use as PS5',
+    'hotspot.chooseDevice': 'Select a connected device', 'hotspot.deviceUse': 'Confirm as PS5',
+    'hotspot.deviceHelp': 'The list refreshes from hotspot connection endpoints. Verify the IP on PS5, select it and confirm before starting services. Devices are not automatically identified as PS5. Stop services and finish or cancel tasks before changing the target.',
+    'hotspot.selectFirst': 'Start the hotspot, connect PS5, then select and confirm its connected IP before starting services.',
+    'hotspot.stopServices': 'Stop local services before choosing another hotspot target.',
+    'hotspot.targetLeft': 'The selected device disconnected or its address changed. Services were stopped; select and confirm a connected device again.',
+    'hotspot.targetSelected': 'Confirmed PS5 target: {address}. You can choose again after stopping services and tasks.',
+  });
+  Object.assign(zhCN, {
+    'hotspot.devicesRefresh': '查看已连接设备', 'hotspot.devices': '选择要作为 PS5 的设备 IP',
+    'hotspot.chooseDevice': '请选择已连接设备', 'hotspot.deviceUse': '确认并设为 PS5',
+    'hotspot.deviceHelp': '列表按热点连接信息刷新。请在 PS5 核对 IP，选择并确认后才能启动服务；软件不自动识别 PS5。重新选择前先停止服务，结束或取消任务。',
+    'hotspot.selectFirst': '请先启动热点、连接 PS5，再选择并确认已连接的 PS5 IP，才能启动服务。',
+    'hotspot.stopServices': '请先停止本地服务，再重新选择热点目标设备。',
+    'hotspot.targetLeft': '选中的设备已断开或地址变化，服务已停止；请重新选择并确认已连接设备。',
+    'hotspot.targetSelected': '已确认 PS5 地址：{address}。停止服务和任务后可重新选择。',
   });
   const messages = Object.freeze({ en: Object.freeze(en), 'zh-CN': Object.freeze(zhCN) });
 

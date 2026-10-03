@@ -23,6 +23,17 @@ function harness(settings = {}) {
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
+test('complete peer snapshots track multiple devices and removal independently', async () => {
+  const h = harness(); h.send({ type: 'started', isolated: true }); const session = await h.pending;
+  h.send({ type: 'address', address: '192.168.137.1' });
+  h.send({ type: 'peers', address: session.address, peers: ['192.168.137.2', '192.168.137.3'] });
+  h.send({ type: 'peers', address: session.address, peers: ['192.168.137.3'] });
+  h.send({ type: 'peers', address: session.address, peers: [] });
+  assert.deepEqual(h.events.filter(e => e.type === 'hotspotPeers').map(e => e.peers),
+    [['192.168.137.2', '192.168.137.3'], ['192.168.137.3'], []]);
+  await session.stop();
+});
+
 test('hotspot inputs are bounded and passwords do not enter command arguments', async () => {
   for (const value of [null, {}, { ...options, ssid: '中文' }, { ...options, ssid: 'x'.repeat(33) },
     { ...options, password: 'short' }, { ...options, password: 'space pass' }, { ...options, password: 'line\nbreak' }]) {

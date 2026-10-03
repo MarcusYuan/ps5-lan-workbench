@@ -23,6 +23,7 @@ const { createController } = require('./service/controller');
 const { createConfigurator } = require('./network/configuration');
 const { createSystemDriver } = require('./network/system');
 const { validateOptions: validateHotspotOptions, privateAddress } = require('./network/hotspot');
+const { networkMode, targetReady } = require('./network/hotspot-target');
 
 const helperIndex = process.argv.indexOf('--service-helper');
 if (helperIndex >= 0) {
@@ -55,6 +56,7 @@ if (helperIndex >= 0) {
   let networkRefresh = null;
   let hostBusy = false;
   let hotspotController;
+  let hotspotPeersTimer;
   let quitting = false;
   const componentAborts = new Map();
   let configData = null;
@@ -68,7 +70,8 @@ if (helperIndex >= 0) {
     pkgSelection: null, gameSelection: null, remoteTask: null,
     componentRuntime: { payloadManager: { phase: 'unchecked', target: '', error: null } },
     network: { supported: ['win32', 'darwin'].includes(process.platform), adapters: [], managed: null, busy: false, status: 'idle', error: null },
-    hotspot: { supported: process.platform === 'win32', phase: 'stopped', ssid: '', address: '', peer: '', error: null },
+    networkMode: networkMode(),
+    hotspot: { supported: process.platform === 'win32', phase: 'stopped', ssid: '', address: '', peer: '', peers: [], confirmedTarget: '', peersUpdatedAt: 0, error: null },
   };
   let configWrite = Promise.resolve();
 
@@ -141,6 +144,7 @@ if (helperIndex >= 0) {
       if (typeof old.entryPath === 'string') state.entryPath = validateEntryPath(old.entryPath);
       if (validDomain(old.targetDomain)) state.targetDomain = old.targetDomain;
       if (typeof old.selectedIp === 'string') state.selectedIp = old.selectedIp;
+      state.networkMode = networkMode(old.networkMode);
       if (i18n.SUPPORTED_LANGUAGES.includes(old.language)) state.language = old.language;
       if (old.downloadRoute === 'mirror') state.downloadRoute = 'mirror';
       try { state.ps5Target = normalizeTarget(old.ps5Target, { allowEmpty: true }); } catch { /* older config */ }
@@ -149,7 +153,7 @@ if (helperIndex >= 0) {
     state.interfaces = interfaces();
     if (!state.interfaces.some(item => item.address === state.selectedIp)) state.selectedIp = state.interfaces[0]?.address || '';
     configData = { selectedIp: state.selectedIp, sourceUrl: state.sourceUrl, entryPath: state.entryPath,
-      targetDomain: state.targetDomain, language: state.language, ps5Target: state.ps5Target, downloadRoute: state.downloadRoute };
+      targetDomain: state.targetDomain, language: state.language, ps5Target: state.ps5Target, downloadRoute: state.downloadRoute, networkMode: state.networkMode };
     await Promise.all(Object.keys(CATALOG).map(async id => {
       const inspected = await componentFiles.inspect(componentDir, id).catch(() => null);
       if (inspected) state.components[id] = { phase: 'ready', progress: 100,
@@ -170,6 +174,7 @@ if (helperIndex >= 0) {
   }
   function publicState() {
     state.hotspot.active = Boolean(hotspotController);
+    state.hotspot.targetReady = targetReady(state.hotspot, state.ps5Target.address);
     state.interfaces = interfaces();
     if (hotspotController) state.selectedIp = state.hotspot.address;
     else if (!state.interfaces.some(item => item.address === state.selectedIp)) state.selectedIp = state.interfaces[0]?.address || '';
@@ -229,6 +234,8 @@ if (helperIndex >= 0) {
     if (abortController) throw error('DOWNLOAD_IN_PROGRESS', 'error.waitForDownload');
     if (!state.download.meta) throw error('DOWNLOAD_REQUIRED', 'error.downloadFirst');
     const ip = String(options?.interfaceAddress || state.selectedIp);
+    if (state.networkMode === 'hotspot' && !targetReady({ ...state.hotspot, active: Boolean(hotspotController) }, state.ps5Target.address))
+      throw error('HOTSPOT', 'hotspot.selectFirst');
     if (hotspotController && (!state.hotspot.address || ip !== state.hotspot.address)) throw error('HOTSPOT', 'hotspot.waitAddress');
     if (!interfaces().some(item => item.address === ip)) throw error('INVALID_INTERFACE', 'error.invalidInterface');
     const entryPath = validateEntryPath(String(options?.entryPath || state.entryPath));
@@ -262,6 +269,10 @@ if (helperIndex >= 0) {
         log(i18n.message('log.authorization'));
         controller = await createController({ ...base, elevated: true });
       }
+      if (state.networkMode === 'hotspot' && (!targetReady({ ...state.hotspot, active: Boolean(hotspotController) }, state.ps5Target.address) || state.hotspot.address !== ip)) {
+        await stopHost();
+        throw error('HOTSPOT', 'hotspot.selectFirst');
+      }
       state.selectedIp = ip; state.entryPath = entryPath; state.targetDomain = domain;
       state.service = { dns: 'listening', https: 'listening', http: 'listening', ps5Access: false, error: null, elevated: controller.elevated };
       updateUrls();
@@ -289,13 +300,24 @@ if (helperIndex >= 0) {
     return publicState();
   }
   async function setPs5Target(_event, value) {
-    if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
+    if (remoteAbort || componentCheckBusy || networkBusy || hostBusy) throw error('REMOTE_BUSY', 'remote.busy');
     const target = normalizeTarget(value);
+    if (state.networkMode === 'hotspot') {
+      if (controller) throw error('HOTSPOT', 'hotspot.stopServices');
+      if (!hotspotController || !state.hotspot.peers.includes(target.address) || Date.now() - state.hotspot.peersUpdatedAt >= 8000)
+        throw error('HOTSPOT', 'hotspot.selectFirst');
+    }
     componentCheckBusy = true;
     try {
       try { await commitConfig({ ps5Target: target }); }
       catch (cause) { throw i18n.createError('CONFIG_SAVE_FAILED', 'error.configSave', {}, cause.message); }
       state.ps5Target = target;
+      if (state.networkMode === 'hotspot') {
+        if (!state.hotspot.peers.includes(target.address) || Date.now() - state.hotspot.peersUpdatedAt >= 8000)
+          throw error('HOTSPOT', 'hotspot.selectFirst');
+        state.hotspot.confirmedTarget = target.address;
+        state.hotspot.error = null;
+      }
       state.componentRuntime.payloadManager = { phase: 'unchecked', target: '', error: null };
       emit();
       return publicState();
@@ -338,6 +360,11 @@ if (helperIndex >= 0) {
       throw cause;
     } finally { componentAborts.delete(id); }
   }
+  function confirmedPs5Target() {
+    if (state.networkMode === 'hotspot' && !targetReady({ ...state.hotspot, active: Boolean(hotspotController) }, state.ps5Target.address))
+      throw error('HOTSPOT', 'hotspot.selectFirst');
+    return normalizeTarget(state.ps5Target);
+  }
   async function sendComponentElf(file, target, options) {
     try { await sendElf(file, target, options); }
     catch (cause) {
@@ -356,7 +383,7 @@ if (helperIndex >= 0) {
     if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
     if (id !== 'payloadManager') throw error('UNSUPPORTED_COMPONENT_CHECK', 'remote.checkUnsupported');
     if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
-    const target = normalizeTarget(state.ps5Target);
+    const target = confirmedPs5Target();
     componentCheckBusy = true;
     try {
       await payloadManager.identify(target);
@@ -429,23 +456,26 @@ if (helperIndex >= 0) {
     emit();
     try {
       await networkRefresh;
+      clearTimeout(hotspotPeersTimer);
       if (action === 'stop') {
         await hotspotController?.stop();
         hotspotController = null;
-        state.hotspot = { ...state.hotspot, phase: 'stopped', address: '', peer: '' };
+        state.hotspot = { ...state.hotspot, phase: 'stopped', address: '', peer: '', peers: [], confirmedTarget: '', peersUpdatedAt: 0 };
         state.selectedIp = '';
       } else {
         const snapshot = await networkConfigurator.inspect();
         if (snapshot.managed && snapshot.managed.bootId === snapshot.bootId) throw error('NETWORK_CONFIG', 'network.clearFirst');
-        state.hotspot = { ...state.hotspot, ssid: options.ssid, address: '', peer: '' };
+        state.networkMode = 'hotspot';
+        state.hotspot = { ...state.hotspot, ssid: options.ssid, address: '', peer: '', peers: [], confirmedTarget: '', peersUpdatedAt: 0 };
         const pending = [];
         let initialized = false;
         const receive = event => {
           if (!initialized) { pending.push(event); return; }
           if (event.type === 'hotspotFailed') {
+            clearTimeout(hotspotPeersTimer);
             state.hotspot.phase = 'failed';
             state.hotspot.error = i18n.message(event.key);
-            state.hotspot.address = ''; state.hotspot.peer = '';
+            state.hotspot.address = ''; state.hotspot.peer = ''; state.hotspot.peers = []; state.hotspot.confirmedTarget = '';
             state.selectedIp = '';
             // Loss of the hotspot invalidates services and any in-flight peer operation.
             remoteAbort?.abort();
@@ -456,12 +486,29 @@ if (helperIndex >= 0) {
             }
           } else if (event.type === 'hotspotAddress') {
             if (state.hotspot.address && event.address !== state.hotspot.address) {
+              state.hotspot.peers = []; state.hotspot.confirmedTarget = '';
               remoteAbort?.abort();
               void stopHost().catch(cause => { state.service.error = i18n.serializeError(cause); emit(); });
             }
             state.hotspot.address = event.address;
             state.hotspot.phase = event.address ? 'ready' : 'started';
             state.selectedIp = event.address;
+          } else if (event.type === 'hotspotPeers') {
+            if (event.address !== state.hotspot.address) return;
+            clearTimeout(hotspotPeersTimer);
+            hotspotPeersTimer = setTimeout(() => {
+              state.hotspot.peers = []; state.hotspot.confirmedTarget = '';
+              state.hotspot.error = i18n.message('hotspot.targetLeft');
+              remoteAbort?.abort();
+              void stopHost().catch(cause => { state.service.error = i18n.serializeError(cause); }).finally(emit);
+            }, 8000);
+            state.hotspot.peers = event.peers; state.hotspot.peersUpdatedAt = Date.now();
+            if (state.hotspot.confirmedTarget && !event.peers.includes(state.hotspot.confirmedTarget)) {
+              state.hotspot.confirmedTarget = '';
+              state.hotspot.error = i18n.message('hotspot.targetLeft');
+              remoteAbort?.abort();
+              void stopHost().catch(cause => { state.service.error = i18n.serializeError(cause); }).finally(emit);
+            }
           } else if (event.type === 'hotspotPeer') {
             if (privateAddress(event.peer)) state.hotspot.peer = event.peer;
           } else if (event.type === 'hotspotPeerLeft') state.hotspot.peer = '';
@@ -490,7 +537,7 @@ if (helperIndex >= 0) {
     if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
     if (!['payloadManager', 'garlicSaveMgr'].includes(id)) throw error('UNSUPPORTED_COMPONENT_CHECK', 'remote.checkUnsupported');
     if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
-    const target = normalizeTarget(state.ps5Target);
+    const target = confirmedPs5Target();
     componentCheckBusy = true;
     try {
       if (id === 'garlicSaveMgr') {
@@ -511,7 +558,7 @@ if (helperIndex >= 0) {
   function startRemote(type, label, operation) {
     if (networkBusy) throw error('NETWORK_BUSY', 'network.busy');
     if (remoteAbort || componentCheckBusy) throw error('REMOTE_BUSY', 'remote.busy');
-    const target = normalizeTarget(state.ps5Target);
+    const target = confirmedPs5Target();
     const id = crypto.randomUUID();
     const abort = new AbortController();
     remoteAbort = abort;
@@ -638,6 +685,15 @@ if (helperIndex >= 0) {
     ipcMain.handle('network:clear', handle(() => changeNetwork('clear')));
     ipcMain.handle('hotspot:start', handle((_event, options) => changeHotspot('start', options)));
     ipcMain.handle('hotspot:stop', handle(() => changeHotspot('stop')));
+    ipcMain.handle('network:setMode', handle(async (_event, value) => {
+      if (!['single', 'dual', 'hotspot'].includes(value) || (value === 'hotspot' && process.platform !== 'win32'))
+        throw error('HOTSPOT', 'hotspot.unsupported');
+      if (hotspotController || networkBusy || hostBusy || controller || remoteAbort || componentCheckBusy || abortController || componentAborts.size)
+        throw error('NETWORK_BUSY', 'network.stopFirst');
+      networkBusy = true;
+      try { await commitConfig({ networkMode: value }); state.networkMode = value; return publicState(); }
+      finally { networkBusy = false; emit(); }
+    }));
     ipcMain.handle('host:download', handle(startDownload));
     ipcMain.handle('host:cancelDownload', () => { abortController?.abort(); return publicState(); });
     const hostAction = action => handle(async (...args) => {

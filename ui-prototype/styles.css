@@ -286,3 +286,7 @@ main { width: min(1280px, 100%); padding: 18px 20px 30px; }
 .game-controls label { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .game-controls input { width: 90px; padding: 7px; }
 .game-controls .primary-button { width: auto; margin: 0; min-height: 34px; }
+.hotspot-device-picker { grid-column: 1 / -1; display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
+.hotspot-device-picker[hidden] { display: none; }
+.hotspot-device-picker .field { flex: 1; min-width: 220px; }
+.hotspot-device-picker p { flex-basis: 100%; margin: 0; font-size: 13px; line-height: 1.6; }

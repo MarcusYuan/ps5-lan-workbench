@@ -21,6 +21,11 @@ function privateAddress(value) {
   return n.every(v => v <= 255) && (n[0] === 10 || (n[0] === 172 && n[1] >= 16 && n[1] <= 31) || (n[0] === 192 && n[1] === 168));
 }
 
+function peerAddresses(values, host) {
+  if (!Array.isArray(values) || values.length > 8 || values.some(ip => !privateAddress(ip) || ip === host)) return null;
+  return [...new Set(values)].sort();
+}
+
 function nativeScript({ compileOnly = false, inputProbe = false } = {}) {
   const sources = ['hotspot-native.cs', 'hotspot-isolation.cs']
     .map(file => fs.readFileSync(path.join(__dirname, file), 'utf8'));
@@ -121,6 +126,10 @@ async function startWindowsHotspot(options, { platform = process.platform, spawn
           onEvent({ type: 'hotspotAddress', address });
         } else if (message.type === 'peer' && ready && privateAddress(message.address) && privateAddress(message.peer)) {
           onEvent({ type: 'hotspotPeer', address: message.address, peer: message.peer });
+        } else if (message.type === 'peers' && ready && message.address === address && privateAddress(address)) {
+          const peers = peerAddresses(message.peers, address);
+          if (peers === null) { failed('nativeError'); return; }
+          onEvent({ type: 'hotspotPeers', address, peers });
         } else if (message.type === 'disconnected' && ready) onEvent({ type: 'hotspotPeerLeft' });
         else if (message.type === 'peerError' && ready) onEvent({ type: 'hotspotPeerError' });
       }
@@ -132,4 +141,4 @@ async function startWindowsHotspot(options, { platform = process.platform, spawn
   return result;
 }
 
-module.exports = { validateOptions, privateAddress, nativeScript, startWindowsHotspot };
+module.exports = { validateOptions, privateAddress, peerAddresses, nativeScript, startWindowsHotspot };

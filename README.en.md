@@ -89,7 +89,7 @@ Select **Local hotspot · Windows experimental** to broadcast password-protected
 1. **Prepare:** download pages and required components first; stop services and finish downloads and transfers. If you used either adapter mode, **Clear app-added configuration** first. Turn off Windows Mobile hotspot, internet sharing and bridging.
 2. **Start on the computer:** choose hotspot mode, enter a name and password, click **Start local hotspot** and complete system authorization. Names contain 1–32 ASCII characters, start with a letter or digit and may include spaces, `_` or `-`. Passwords accept 8–63 printable ASCII characters without spaces. Passwords are not saved and must be entered on each start.
 3. **Connect PS5:** select this Wi-Fi name and enter its password. Use **automatic IP** first and wait for the computer hotspot IP in the app. If no usable address appears after connection, inspect the adapter, driver and interface error; do not bypass checks by copying the fixed-address table.
-4. **Set DNS and save the address:** manually set PS5 primary DNS to the displayed computer hotspot IP while retaining automatic IP. Do not add a public secondary DNS. Check the actual assigned IP on PS5, enter it in the app and click **Save PS5 address**. An observed peer IP is only a clue and does not establish PS5 identity.
+4. **Set DNS and choose a device:** manually set PS5 primary DNS to the displayed computer hotspot IP while retaining automatic IP. Do not add a public secondary DNS. Click **View connected devices**, verify the actual IP on PS5, select it and click **Confirm as PS5**. The list does not identify PS5 automatically; confirm a target before starting services.
 5. **Start services separately:** the app selects the actual hotspot interface; click **Start local services**, then continue with Figure 2. A started hotspot does not establish that DNS/web services are running or PS5 has accessed the page.
 6. **Stop:** stop services and finish downloads and transfers, then click **Stop hotspot**. Closing the app also stops it. Restart the hotspot next time and check its new address instead of reusing the previous one. Disable PS5 automatic updates yourself.
 
@@ -98,11 +98,13 @@ Select **Local hotspot · Windows experimental** to broadcast password-protected
 | Computer hotspot IP | The actual Windows-assigned address displayed by the app |
 | PS5 IP, mask and gateway | Automatic; do not copy the fixed-address table for modes 1 and 2 |
 | PS5 primary DNS | Manually enter the current computer hotspot IP; avoid public secondary DNS |
-| PS5 IP in the app | The actual address checked on the console, saved manually |
+| PS5 IP in the app | The actual address checked on the console, selected and confirmed from connected devices |
 
 **For example**, if the app shows `192.168.137.1`, use it for primary DNS. This was observed on the tested computer and is not a fixed address for every system. Do not click Configure IP automatically in hotspot mode. DNS resolves only the configured target domain and does not forward other queries. A failed internet connection test alone does not establish that the local page is unreachable.
 
 Temporary hotspot isolation rules block IPv4/IPv6 forwarding to other networks and restrict access to local services. Forwarding settings on other adapters, including Clash/Mihomo, are preserved. Existing sharing, bridges or active Wi-Fi Direct interfaces still prevent startup; failed isolation stops the hotspot. PS5 connectivity and device-side internet isolation still require testing. [Limitations and diagnostics](guides/usage.en.md#windows-local-hotspot-experimental)
+
+Windows initially selects hotspot mode; macOS selects single adapter. Subsequent launches remember the user's choice, without automatically starting a hotspot or requesting authorization. The hotspot list refreshes from current connection endpoints about every two seconds, rather than reading DHCP leases or scanning the LAN. Stop services and finish or cancel remote tasks before selecting again. Disconnection, lost list updates or a hotspot restart require renewed confirmation; another device is never selected automatically.
 
 ## Seven steps from setup to playing
 

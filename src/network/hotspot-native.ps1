@@ -85,6 +85,8 @@ try {
                 if ($addresses.Count -gt 1) { throw 'addressAmbiguous' }
                 $current = if ($addresses.Count -eq 1) { $addresses[0] } else { '' }
                 if ($current -ne $address) { $address=$current; Send-Hotspot @{type='address'; address=$address} }
+                try { Send-Hotspot @{type='peers'; address=$address; peers=@($native.Peers())} }
+                catch { Send-Hotspot @{type='peerError'} }
                 Send-Hotspot @{type='health'}
             }
         }

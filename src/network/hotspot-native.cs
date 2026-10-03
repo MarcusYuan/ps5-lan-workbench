@@ -120,6 +120,16 @@ public sealed class LocalHotspot : IDisposable
         } catch { notices.Enqueue(new Notice { type = "peerError" }); }
     }
 
+    public string[] Peers()
+    {
+        lock (gate) {
+            return devices.Values.Where(d => d.ConnectionStatus == WiFiDirectConnectionStatus.Connected)
+                .SelectMany(d => d.GetConnectionEndpointPairs())
+                .Where(p => p.RemoteHostName.Type == Windows.Networking.HostNameType.Ipv4)
+                .Select(p => p.RemoteHostName.CanonicalName).Distinct().ToArray();
+        }
+    }
+
     public Notice Next() { Notice notice; return notices.TryDequeue(out notice) ? notice : null; }
 
     public string[] Addresses()

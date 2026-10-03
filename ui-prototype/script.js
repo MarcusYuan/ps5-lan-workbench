@@ -54,7 +54,7 @@
   let remoteAction = '';
   let networkAction = false;
   let networkFeedback = null;
-  const networkSelection = { mode: 'dual', adapterId: '', address: '192.168.100.1', initialized: false };
+  const networkSelection = { mode: 'single', adapterId: '', address: '192.168.100.1', initialized: false };
   const logs = [];
   const locallyEdited = new WeakSet();
   const maxLogs = 100;
@@ -254,6 +254,7 @@
   function renderNetwork(state) {
     const network = state.network || {};
     const hotspot = state.hotspot || {};
+    if (state.networkMode) networkSelection.mode = state.networkMode;
     const hotspotActive = hotspot.active || ['starting', 'started', 'ready', 'stopping'].includes(hotspot.phase);
     $('#network-mode option[value="hotspot"]').disabled = !hotspot.supported;
     if (hotspotActive) networkSelection.mode = 'hotspot';
@@ -291,7 +292,7 @@
     const adapters = (network.adapters || []).filter(a => a.hardware);
     const managed = network.managed;
     if (!networkSelection.initialized && (adapters.length || managed)) {
-      if (managed) Object.assign(networkSelection, { mode: managed.mode, adapterId: managed.adapterId, address: managed.address });
+      if (managed) Object.assign(networkSelection, { adapterId: managed.adapterId, address: managed.address });
       networkSelection.initialized = true;
     }
     const mode = $('#network-mode'); const select = $('#network-adapter'); const address = $('#network-address');
@@ -440,7 +441,7 @@
     updateInput(elements.sourceUrl, state.sourceUrl);
     updateInput(elements.entryPath, state.entryPath);
     updateInput(elements.targetDomain, state.targetDomain);
-    updateInput(elements.ps5Ip, state.ps5Target?.address || '');
+    updateInput(elements.ps5Ip, state.networkMode === 'hotspot' ? state.hotspot?.confirmedTarget || '' : state.ps5Target?.address || '');
     updateInput(elements.elfPort, state.ps5Target?.elfPort ?? 9021);
     updateInput(elements.managerPort, state.ps5Target?.managerPort ?? 8844);
     renderInterfaces(state);
@@ -474,7 +475,8 @@
 
     elements.downloadButton.disabled = !hasApi || Boolean(busyAction) || !sourceUrlIsValid(elements.sourceUrl.value.trim()) || !sourcePathIsValid(elements.entryPath.value);
     elements.downloadButton.textContent = t(busyAction === 'download' ? 'source.processing' : 'source.download');
-    elements.serviceToggle.disabled = !hasApi || Boolean(busyAction) || (!running && (!selectedAddress || !downloadReady || !sourcePathIsValid(elements.entryPath.value)));
+    const targetRequired = networkSelection.mode === 'hotspot' && !state.hotspot?.targetReady;
+    elements.serviceToggle.disabled = !hasApi || Boolean(busyAction) || Boolean(state.network?.busy) || (!running && (targetRequired || !selectedAddress || !downloadReady || !sourcePathIsValid(elements.entryPath.value)));
     elements.serviceToggle.textContent = t(busyAction ? 'source.processing' : running ? 'service.stop' : 'service.start');
     elements.serviceToggle.classList.toggle('stop', running);
     elements.interface.disabled = Boolean(busyAction) || running || !Array.isArray(state.interfaces) || state.interfaces.length === 0;
@@ -498,6 +500,8 @@
       elements.serviceCaption.textContent = t(state.diagnostic ? 'service.captionDiagnosticRunning' : 'service.captionRunning');
     } else if (!hasApi) {
       elements.serviceCaption.textContent = t('service.captionNoApi');
+    } else if (targetRequired) {
+      elements.serviceCaption.textContent = t('hotspot.selectFirst');
     } else if (!selectedAddress) {
       elements.serviceCaption.textContent = t('service.captionNoInterface');
     } else if (!downloadReady) {
@@ -519,8 +523,28 @@
       .some(input => locallyEdited.has(input));
     const task = state.remoteTask;
     const active = task && ['checking', 'sending', 'verifying', 'uploading', 'installing', 'y2jbUploading', 'y2jbVerifying', 'y2jbPublishing'].includes(task.phase);
+    const hotspotMode = networkSelection.mode === 'hotspot';
+    $('#hotspot-device-picker').hidden = !hotspotMode;
+    elements.ps5Ip.readOnly = hotspotMode;
+    elements.ps5Ip.placeholder = hotspotMode ? t('hotspot.chooseDevice') : '192.168.100.2';
+    elements.saveTarget.hidden = hotspotMode;
+    const devices = $('#hotspot-devices');
+    const previousDevice = devices.value;
+    devices.replaceChildren();
+    const emptyDevice = document.createElement('option'); emptyDevice.value = ''; emptyDevice.textContent = t('hotspot.chooseDevice'); devices.append(emptyDevice);
+    for (const ip of state.hotspot?.peers || []) {
+      const option = document.createElement('option'); option.value = ip; option.textContent = ip; devices.append(option);
+    }
+    devices.value = (state.hotspot?.peers || []).includes(previousDevice) ? previousDevice : '';
+    const deviceBusy = Boolean(active || savingTarget || busyAction || networkAction || remoteAction || state.network?.busy || hasRunningService(state.service));
+    devices.disabled = deviceBusy || !state.hotspot?.active;
+    $('#hotspot-device-use').disabled = deviceBusy || !devices.value;
+    $('#hotspot-devices-refresh').disabled = Boolean(savingTarget || networkAction || !state.hotspot?.active);
+    $('#hotspot-device-status').textContent = t(state.hotspot?.targetReady ? 'hotspot.targetSelected' : 'hotspot.deviceHelp', { address: state.ps5Target?.address || '' });
     elements.saveTarget.disabled = savingTarget || Boolean(active);
+    if (hotspotMode) elements.saveTarget.disabled = deviceBusy || !(state.hotspot?.peers || []).includes(elements.ps5Ip.value.trim());
     for (const input of [elements.ps5Ip, elements.elfPort, elements.managerPort]) input.disabled = Boolean(active);
+    if (hotspotMode) elements.ps5Ip.disabled = deviceBusy;
     elements.targetMessage.textContent = targetFeedback ? asText(targetFeedback) : t('target.help');
     elements.pkgName.textContent = state.pkgSelection?.name || t('pkg.none');
     elements.pkgDetails.textContent = state.pkgSelection ?
@@ -674,7 +698,26 @@
   }
 
   elements.sourceUrl.addEventListener('input', () => { locallyEdited.add(elements.sourceUrl); render(); });
-  $('#network-mode').addEventListener('change', () => { networkSelection.mode = $('#network-mode').value; networkFeedback = null; render(); });
+  $('#network-mode').addEventListener('change', async () => {
+    const mode = $('#network-mode').value;
+    if (!api?.setNetworkMode) { networkSelection.mode = mode; render(); return; }
+    networkAction = true; render();
+    try { const result = await api.setNetworkMode(mode); if (result?.ok === false) throw result.error; mergeState(result); networkFeedback = null; }
+    catch (cause) { networkFeedback = cause?.key ? cause : i18n.serializeError(cause); }
+    finally { networkAction = false; render(); }
+  });
+  $('#hotspot-devices').addEventListener('change', () => render());
+  $('#hotspot-devices-refresh').addEventListener('click', async () => {
+    try { const result = await api.getState(); if (result?.ok === false) throw result.error; mergeState(result); targetFeedback = null; }
+    catch (cause) { targetFeedback = i18n.serializeError(cause); }
+    render();
+  });
+  $('#hotspot-device-use').addEventListener('click', () => {
+    const address = $('#hotspot-devices').value;
+    if (!address || $('#hotspot-device-use').disabled) return;
+    elements.ps5Ip.value = address; locallyEdited.add(elements.ps5Ip); render();
+    elements.saveTarget.click();
+  });
   for (const id of ['hotspot-ssid','hotspot-password']) $(`#${id}`).addEventListener('input', () => { networkFeedback = null; render(); });
   $('#network-adapter').addEventListener('change', () => { networkSelection.adapterId = $('#network-adapter').value; networkFeedback = null; render(); });
   $('#network-address').addEventListener('input', () => { networkSelection.address = $('#network-address').value; networkFeedback = null; render(); });
